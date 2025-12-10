@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>InTuition Exchange - The Campus For College Coins</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="The Campus For College Coins and other popular tokens. Trade university-issued College Coins for tuition, living expenses, or liquidity. Swap between TUIT and major cryptocurrencies like BTC, ETH, and USDT.">
+    <meta name="keywords" content="college coins, TUIT, crypto exchange, blockchain, education tokens, university tokens, crypto trading, BTC, ETH, USDT, student finance">
+    <meta name="author" content="InTuition Exchange">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://intuitionexchange.com">
+    <meta property="og:title" content="InTuition Exchange - The Campus For College Coins">
+    <meta property="og:description" content="Trade university-issued College Coins for tuition, living expenses, or liquidity. Swap between TUIT and major cryptocurrencies like BTC, ETH, and USDT with instant settlement.">
+    <meta property="og:image" content="https://intuitionexchange.com/intuition-coming-soon/assets/img/meta-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="InTuition Exchange">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://intuitionexchange.com">
+    <meta name="twitter:title" content="InTuition Exchange - The Campus For College Coins">
+    <meta name="twitter:description" content="Trade university-issued College Coins for tuition, living expenses, or liquidity. Swap between TUIT and major cryptocurrencies like BTC, ETH, and USDT.">
+    <meta name="twitter:image" content="https://intuitionexchange.com/intuition-coming-soon/assets/img/meta-image.png">
+    
+    <!-- Additional SEO -->
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <link rel="canonical" href="https://intuitionexchange.com">
+
+    <!-- Viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Favicon and Touch Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/img/intuition-logo-3.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/img/intuition-logo-4.png">
+    <link rel="manifest" href="assets/favicon/site.webmanifest">
+    <link rel="mask-icon" href="assets/img/intuition-logo.svg" color="#6366f1">
+    <link rel="shortcut icon" href="assets/img/favicon.ico">
+    <meta name="msapplication-TileColor" content="#080032">
+    <meta name="msapplication-config" content="assets/favicon/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Vendor Styles -->
+    <link rel="stylesheet" media="screen" href="assets/vendor/boxicons/css/boxicons.min.css"/>
+    <link rel="stylesheet" media="screen" href="assets/vendor/swiper/swiper-bundle.min.css"/>
+
+    <!-- Main Theme Styles + Bootstrap -->
+    <link rel="stylesheet" media="screen" href="assets/css/theme.min.css">
+
+    <!-- Page loading styles -->
+    <style>
+      .page-loading {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        -webkit-transition: all .4s .2s ease-in-out;
+        transition: all .4s .2s ease-in-out;
+        background-color: #fff;
+        opacity: 0;
+        visibility: hidden;
+        z-index: 9999;
+      }
+      .dark-mode .page-loading {
+        background-color: #0b0f19;
+      }
+      .page-loading.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      .page-loading-inner {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        text-align: center;
+        -webkit-transform: translateY(-50%);
+        transform: translateY(-50%);
+        -webkit-transition: opacity .2s ease-in-out;
+        transition: opacity .2s ease-in-out;
+        opacity: 0;
+      }
+      .page-loading.active > .page-loading-inner {
+        opacity: 1;
+      }
+      .page-loading-inner > span {
+        display: block;
+        font-size: 1rem;
+        font-weight: normal;
+        color: #9397ad;
+      }
+      .dark-mode .page-loading-inner > span {
+        color: #fff;
+        opacity: .6;
+      }
+      .page-spinner {
+        display: inline-block;
+        width: 2.75rem;
+        height: 2.75rem;
+        margin-bottom: .75rem;
+        vertical-align: text-bottom;
+        border: .15em solid #b4b7c9;
+        border-right-color: transparent;
+        border-radius: 50%;
+        -webkit-animation: spinner .75s linear infinite;
+        animation: spinner .75s linear infinite;
+      }
+      .dark-mode .page-spinner {
+        border-color: rgba(255,255,255,.4);
+        border-right-color: transparent;
+      }
+      @-webkit-keyframes spinner {
+        100% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes spinner {
+        100% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+
+    <!-- Theme mode -->
+    <script>
+      let mode = window.localStorage.getItem('mode'),
+          root = document.getElementsByTagName('html')[0];
+      if (mode !== null && mode === 'dark') {
+        root.classList.add('dark-mode');
+      } else {
+        root.classList.remove('dark-mode');
+      }
+    </script>
+
+    <!-- Page loading scripts -->
+    <script>
+      (function () {
+        window.onload = function () {
+          const preloader = document.querySelector('.page-loading');
+          preloader.classList.remove('active');
+          setTimeout(function () {
+            preloader.remove();
+          }, 1000);
+        };
+      })();
+    </script>
+  </head>
+
+
+  <!-- Body -->
+  <body>
+    
+    <!-- Page loading spinner -->
+    <div class="page-loading active">
+      <div class="page-loading-inner">
+        <div class="page-spinner"></div><span>Loading...</span>
+      </div>
+    </div>
+
+
+    <!-- Page wrapper for sticky footer -->
+    <!-- Wraps everything except footer to push footer to the bottom of the page if there is little content -->
+    <main class="page-wrapper">
+
+
+      <!-- Navbar -->
+      <!-- Remove "navbar-sticky" class to make navigation bar scrollable with the page -->
+      <header class="header navbar navbar-expand-lg position-absolute navbar-sticky">
+        <div class="container px-3">
+          <a href="index.html" class="navbar-brand pe-3">
+            <img src="assets/img/intuition-logo.svg" width="42" alt="InTuition Exchange Logo">
+            InTuition Exchange
+          </a>
+          
+          <div class="form-check form-switch mode-switch pe-lg-1 ms-auto me-4" data-bs-toggle="mode">
+            <input type="checkbox" class="form-check-input" id="theme-mode">
+            <label class="form-check-label d-none d-sm-block" for="theme-mode">Light</label>
+            <label class="form-check-label d-none d-sm-block" for="theme-mode">Dark</label>
+          </div>
+          
+        </div>
+      </header>
+
+
+      <!-- Hero -->
+      <section class="container py-5 mt-5 mt-md-4 mb-md-3 mb-lg-4 mb-xl-5">
+        <div class="row align-items-center align-items-lg-stretch mb-2 mb-sm-3">
+
+          <!-- Parallax gfx -->
+          <div class="col-xl-7 col-md-6 d-flex justify-content-center justify-content-md-end overflow-hidden order-md-2 mt-n5 mt-sm-n4 mt-md-0">
+            <div class="position-relative mt-5" style="max-width: 660px;">
+              <div class="bg-gradient-primary position-absolute start-0 bottom-0 w-100 rounded-3 opacity-15" style="height: 95%;"></div>
+              <div class="parallax zindex-2">
+                <div class="parallax-layer zindex-2 mb-n3" data-depth="0.1">
+                  <img src="assets/img/landing/app-showcase/hero/layer01.png" alt="Device">
+                </div>
+                <div class="parallax-layer" data-depth="-0.22">
+                  <img src="assets/img/landing/app-showcase/hero/tuit-layer-2.png" alt="Bubble">
+                </div>
+                <div class="parallax-layer" data-depth="0.3">
+                  <img src="assets/img/landing/app-showcase/hero/layer03.png" alt="Bubble">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Text -->
+          <div class="col-xl-5 col-md-6 d-flex flex-column order-md-1">
+            <div class="text-center text-md-start pt-4 pt-sm-5 pt-xl-0 mt-2 mt-sm-0 my-lg-auto">
+              <h1 class="display-3 mb-4">The Campus For <br><span style="color:rgb(97, 144, 247)">College Coins</span></h1>
+              <p class="h4 mb-4">And other popular tokens</p>
+              <p class="fs-lg mb-4 d-md-none d-xl-block">Trade university-issued College Coins for tuition, living expenses, or liquidity. Swap between TUIT and major cryptocurrencies like BTC, ETH, and USDT with instant settlement and transparent pricing.</p>
+              <div class="d-flex flex-column flex-sm-row pt-2">
+                <a href="#features" class="btn btn-primary btn-lg me-sm-3 mb-3 mb-sm-0">Explore Features</a>
+                <a href="https://coinsforcollege.org" target="_blank" class="btn btn-outline-primary btn-lg">About College Coins</a>
+              </div>
+              
+            </div>
+            
+          </div>
+        </div>
+      </section>
+
+
+      <!-- What are College Coins -->
+      <section class="container py-5 my-2 my-md-4 my-lg-5">
+        <div class="row align-items-center">
+          <div class="col-lg-6 mb-5 mb-lg-0">
+            <div class="pe-lg-5">
+              <h2 class="h1 mb-4">What are <span style="color:rgb(97, 144, 247)">College Coins?</span></h2>
+              <p class="fs-lg mb-4">College Coins are university-specific digital tokens built on blockchain technology. Each university issues its own coin - creating a unique digital economy where students can earn, spend, and trade.</p>
+              
+              <div class="d-flex align-items-start mb-3">
+                <div class="d-table bg-secondary rounded-3 flex-shrink-0 p-2 me-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                    <path d="M11 5.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zm-3 0a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zm-5 3a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1zm3 0a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1-.5-.5v-1z"/>
+                    <path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="h5 mb-2">Earn Before Enrollment</h3>
+                  <p class="mb-0">Students accumulate coins from multiple universities through prep activities like AI tutoring, language tests, and document preparation - before even applying.</p>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-start mb-3">
+                <div class="d-table bg-secondary rounded-3 flex-shrink-0 p-2 me-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                    <path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                    <path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="h5 mb-2">Spend on Campus</h3>
+                  <p class="mb-0">Use coins for tuition, housing, meals, books, and all campus services. Universities set their own exchange rates and pricing.</p>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-start">
+                <div class="d-table bg-secondary rounded-3 flex-shrink-0 p-2 me-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                    <path d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5zm14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="h5 mb-2">Trade on InTuition Exchange</h3>
+                  <p class="mb-0">Convert coins to cash or other crypto through the InTuition Exchange. Full liquidity for students, parents, and employers.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="position-relative">
+              <div class="bg-gradient-primary position-absolute top-0 start-0 w-100 h-100 rounded-3 opacity-10"></div>
+              <div class="position-relative p-4 p-sm-5">
+                <div class="row g-4">
+                  <div class="col-6">
+                    <div class="card border-0 shadow-sm text-center p-4">
+                      <h3 class="display-4 text-primary mb-2">$273B</h3>
+                      <p class="fs-sm mb-0">Global annual scholarship market</p>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="card border-0 shadow-sm text-center p-4">
+                      <h3 class="display-4 text-primary mb-2">28%</h3>
+                      <p class="fs-sm mb-0">Average unclaimed scholarship funds</p>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="card border-0 shadow-sm text-center p-4">
+                      <h3 class="display-4 text-primary mb-2">$1.7T</h3>
+                      <p class="fs-sm mb-0">Outstanding student loan debt</p>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="card border-0 shadow-sm text-center p-4">
+                      <h3 class="display-4 text-primary mb-2">20K+</h3>
+                      <p class="fs-sm mb-0">Universities worldwide</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- College Coins Ecosystem -->
+      <section class="dark-mode bg-dark position-relative py-5 mb-5">
+        <div class="position-absolute top-0 start-0 w-100 h-100 bg-secondary"></div>
+        <div class="container position-relative zindex-3 py-lg-4">
+          <div class="row justify-content-center text-center pb-4 mb-2">
+            <div class="col-xl-8">
+              <h2 class="h1 mb-4">The College Coins Ecosystem</h2>
+              <p class="fs-lg mb-0">An interconnected network where colleges, students, and the InTuition Exchange work seamlessly together on the CollegenZ L2 blockchain.</p>
+            </div>
+          </div>
+
+          <div class="row g-4 pt-3">
+            <div class="col-md-4">
+              <div class="card border-0 h-100 p-4">
+                <div class="d-inline-block bg-primary bg-opacity-10 rounded-3 p-3 mb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                    <path d="M4 4a4 4 0 1 1 4.5 3.969V13.5a.5.5 0 0 1-1 0V7.97A4 4 0 0 1 4 3.999zm2.493 8.574a.5.5 0 0 1-.411.575c-.712.118-1.28.295-1.655.493a1.319 1.319 0 0 0-.37.265.301.301 0 0 0-.057.09V14l.002.008a.147.147 0 0 0 .016.033.617.617 0 0 0 .145.15c.165.13.435.27.813.395.751.25 1.82.414 3.024.414s2.273-.163 3.024-.414c.378-.126.648-.265.813-.395a.619.619 0 0 0 .146-.15.148.148 0 0 0 .015-.033L12 14v-.004a.301.301 0 0 0-.057-.09 1.318 1.318 0 0 0-.37-.264c-.376-.198-.943-.375-1.655-.493a.5.5 0 1 1 .164-.986c.77.127 1.452.328 1.957.594C12.5 13 13 13.4 13 14c0 .426-.26.752-.544.977-.29.228-.68.413-1.116.558-.878.293-2.059.465-3.34.465-1.281 0-2.462-.172-3.34-.465-.436-.145-.826-.33-1.116-.558C3.26 14.752 3 14.426 3 14c0-.599.5-1 .961-1.243.505-.266 1.187-.467 1.957-.594a.5.5 0 0 1 .575.411z"/>
+                  </svg>
+                </div>
+                <h3 class="h4 mb-3">Colleges Issue Coins</h3>
+                <p class="mb-0">Universities create digital tokens through the Coins For College platform, issuing them as scholarships and rewards for student engagement.</p>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="card border-0 h-100 p-4">
+                <div class="d-inline-block bg-primary bg-opacity-10 rounded-3 p-3 mb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                    <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8Zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022ZM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816ZM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275ZM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0Zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>
+                  </svg>
+                </div>
+                <h3 class="h4 mb-3">Students Earn & Spend</h3>
+                <p class="mb-0">Via Rewards For Education platform, students complete tasks to earn coins, then spend them on tuition, housing, and campus services.</p>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="card border-0 h-100 p-4">
+                <div class="d-inline-block bg-primary bg-opacity-10 rounded-3 p-3 mb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-primary" viewBox="0 0 16 16">
+                    <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+                  </svg>
+                </div>
+                <h3 class="h4 mb-3">InTuition Exchange Provides Liquidity</h3>
+                <p class="mb-0">Trade college coins for USD, USDC, or USDT. Students, parents, and employers can buy and sell coins with complete market transparency.</p>
+              </div>
+            </div>
+          </div>
+
+          
+        </div>
+      </section>
+
+
+<!-- How it works (Slider) -->
+      <section class="container">
+        <div class="text-center pb-4 mb-3 mx-auto" style="max-width: 530px;">
+          <h2 class="h1">How Does It Work?</h2>
+          <p class="mb-0">Coins for College is revolutionizing the way parents engage with their children's education earning Tuition Coins in the process.</p>
+        </div>
+        <div class="row align-items-center">
+          <div class="col-md-6 pb-4 pb-md-0 mb-2 mb-md-0">
+
+            <!-- Swiper tabs -->
+            <div class="position-relative px-5">
+              <div class="swiper-tabs zindex-2 mx-auto" style="max-width: 384px;">
+                <div id="screen-1" class="swiper-tab active">
+                  <img src="assets/img/landing/app-showcase/screens/step-1.png" alt="App screen">
+                </div>
+                <div id="screen-2" class="swiper-tab">
+                  <img src="assets/img/landing/app-showcase/screens/step-2.png" alt="App screen">
+                </div>
+                <div id="screen-3" class="swiper-tab">
+                  <img src="assets/img/landing/app-showcase/screens/step-3.png" alt="App screen">
+                </div>
+                <div id="screen-4" class="swiper-tab">
+                  <img src="assets/img/landing/app-showcase/screens/07.png" alt="App screen">
+                </div>
+              </div>
+              <div class="bg-gradient-primary position-absolute start-0 bottom-0 w-100 opacity-15 rounded-3" style="height: 86.5%;"></div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-5 offset-lg-1">
+            <div class="ps-md-4 ps-lg-0">
+
+              <!-- Swiper slider -->
+              <div class="swiper text-center text-md-start mt-auto" data-swiper-options='{
+                "spaceBetween": 30,
+                "loop": true,
+                "tabs": true,
+                "navigation": {
+                  "prevEl": "#prev-screen",
+                  "nextEl": "#next-screen"
+                }
+              }'>
+                <div class="swiper-wrapper">
+                  <div class="swiper-slide" data-swiper-tab="#screen-1">
+                    <div class="fs-xl text-muted mb-3 mb-lg-4">Step 1</div>
+                    <h3 class="mb-lg-4">Sign up on Coins For College</h3>
+                    <p>Register for an account on Coins for College to begin your children's journey towards higher education</p>
+                  </div>
+                  <div class="swiper-slide" data-swiper-tab="#screen-2">
+                    <div class="fs-xl text-muted mb-3 mb-lg-4">Step 2</div>
+                    <h3 class="mb-lg-4">Earn TUIT by managing tasks for children</h3>
+                    <p>Accumulate TUIT by assigning and overseeing tasks for children within the Coins for College.</p>
+                  </div>
+                  <div class="swiper-slide" data-swiper-tab="#screen-3">
+                    <div class="fs-xl text-muted mb-3 mb-lg-4">Step 3</div>
+                    <h3 class="mb-lg-4">Connect with InTuition Exchange</h3>
+                    <p>Establish a seamless connection between your Coins for College account and the Intuition Exchange platform to access the full range of trading options available for TUIT.</p>
+                  </div>
+                  <div class="swiper-slide" data-swiper-tab="#screen-4">
+                    <div class="fs-xl text-muted mb-3 mb-lg-4">Step 4</div>
+                    <h3 class="mb-lg-4">Redeem or Swap</h3>
+                    <p>Utilize your accumulated TUIT balance for transactions within the Intuition Exchange crypto platform, including swapping for other cryptocurrencies or converting it into USD.</p>
+                  </div>
+                </div>
+              </div>
+  
+              <!-- Slider controls (Prev / next) -->
+              <div class="d-flex justify-content-center justify-content-md-start pt-2 pt-lg-3">
+                <button type="button" id="prev-screen" class="btn btn-prev btn-icon btn-sm me-2">
+                  <i class="bx bx-chevron-left"></i>
+                </button>
+                <button type="button" id="next-screen" class="btn btn-next btn-icon btn-sm ms-2">
+                  <i class="bx bx-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- Stats -->
+      <section class="dark-mode bg-dark position-relative pt-5 pb-4 py-md-5">
+        <div class="position-absolute top-0 start-0 w-100 h-100 bg-secondary"></div>
+        <div class="container position-relative zindex-3 py-lg-4 pt-md-2 py-xl-5 mb-lg-4">
+
+          <!-- Title -->
+          <div class="row justify-content-center text-center pb-4 mb-2">
+            <div class="col-xl-6 pt-2">
+              <h2 class="h1 mb-4">Simplify Your Crypto Journey</h2>
+              <p class="fs-lg mb-0">Efficient trading process: access real-time prices and execute orders instantly, all within a single streamlined flow.</p>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="d-sm-flex flex-wrap d-lg-table w-100">
+  
+            <!-- Row -->
+            <div class="d-lg-table-row w-sm-50 w-lg-100 pe-sm-3 pe-lg-0 mb-3 mb-lg-0">
+              <div class="d-lg-table-cell align-middle border-bottom py-3 py-lg-4">
+                <div class="d-flex align-items-center">
+                  <img src="assets/img/landing/app-showcase/crypto/btc.png" width="32" alt="Bitcoin">
+                  <div class="ps-3">
+                    <h3 class="h4 mb-0">Bitcoin<span class="d-inlin-block opacity-60 ps-2 ms-1">BTC</span></h3>
+                  </div>
+                </div>
+              </div>
+              <div class="d-lg-table-cell align-middle h4 border-bottom py-3 py-lg-4 mb-0">$38,940.63</div>
+              <div class="d-lg-table-cell align-middle fs-lg text-success border-bottom py-3 py-lg-4">+1.70%</div>
+              <div class="d-lg-table-cell align-middle fs-lg text-white border-bottom py-3 py-lg-4">$736,124,602,670.97</div>
+              <div class="d-lg-table-cell align-middle border-bottom-lg py-3 py-lg-4">
+                <img src="assets/img/landing/app-showcase/crypto/graphs/btc.svg" width="108" alt="BTC graph">
+              </div>
+              
+            </div>
+  
+            <!-- Row -->
+            <div class="d-lg-table-row w-sm-50 w-lg-100 ps-sm-3 ps-lg-0 mb-3 mb-lg-0">
+              <div class="d-lg-table-cell align-middle border-bottom py-3 py-lg-4">
+                <div class="d-flex align-items-center">
+                  <img src="assets/img/landing/app-showcase/crypto/usdt.png" width="32" alt="Tether">
+                  <div class="ps-3">
+                    <h3 class="h4 mb-0">Tether<span class="d-inlin-block opacity-60 ps-2 ms-1">USDT</span></h3>
+                  </div>
+                </div>
+              </div>
+              <div class="d-lg-table-cell align-middle h4 border-bottom py-3 py-lg-4 mb-0">$15.09</div>
+              <div class="d-lg-table-cell align-middle fs-lg text-danger border-bottom py-3 py-lg-4">-0.27%</div>
+              <div class="d-lg-table-cell align-middle fs-lg text-white border-bottom py-3 py-lg-4">$14,735,584,883.68</div>
+              <div class="d-lg-table-cell align-middle border-bottom-lg py-3 py-lg-4">
+                <img src="assets/img/landing/app-showcase/crypto/graphs/usdt.svg" width="108" alt="USDT graph">
+              </div>
+              
+            </div>
+  
+            <!-- Row -->
+            <div class="d-lg-table-row w-sm-50 w-lg-100 pe-sm-3 pe-lg-0 mb-3 mb-lg-0">
+              <div class="d-lg-table-cell align-middle border-bottom py-3 py-lg-4">
+                <div class="d-flex align-items-center">
+                  <img src="assets/img/tuit-logo-round.svg" width="32" alt="Ethereum">
+                  <div class="ps-3">
+                    <h3 class="h4 mb-0">Tuition Coins<span class="d-inlin-block opacity-60 ps-2 ms-1">TUIT</span></h3>
+                  </div>
+                </div>
+              </div>
+              <div class="d-lg-table-cell align-middle h4 border-bottom py-3 py-lg-4 mb-0">$0.008</div>
+              <div class="d-lg-table-cell align-middle fs-lg text-success border-bottom py-3 py-lg-4">+1.27%</div>
+              <div class="d-lg-table-cell align-middle fs-lg text-white border-bottom py-3 py-lg-4">$37,863,906,048.53</div>
+              <div class="d-lg-table-cell align-middle border-bottom-lg py-3 py-lg-4">
+                <img src="assets/img/landing/app-showcase/crypto/graphs/eth.svg" width="108" alt="TUIT Graph">
+              </div>
+              
+            </div>
+  
+            <!-- Row -->
+            <div class="d-lg-table-row w-sm-50 w-lg-100 ps-sm-3 ps-lg-0 mb-3 mb-lg-0">
+              <div class="d-lg-table-cell align-middle border-bottom py-3 py-lg-4">
+                <div class="d-flex align-items-center">
+                  <img src="assets/img/landing/app-showcase/crypto/dot.png" width="32" alt="Polkadot">
+                  <div class="ps-3">
+                    <h3 class="h4 mb-0">Polkadot<span class="d-inlin-block opacity-60 ps-2 ms-1">DOT</span></h3>
+                  </div>
+                </div>
+              </div>
+              <div class="d-lg-table-cell align-middle h4 border-bottom py-3 py-lg-4 mb-0">$13.28</div>
+              <div class="d-lg-table-cell align-middle fs-lg text-danger border-bottom py-3 py-lg-4">-1.35%</div>
+              <div class="d-lg-table-cell align-middle fs-lg text-white border-bottom py-3 py-lg-4">$26,143,724,006.81</div>
+              <div class="d-lg-table-cell align-middle border-bottom-lg py-3 py-lg-4">
+                <img src="assets/img/landing/app-showcase/crypto/graphs/dot.svg" width="108" alt="DOT graph">
+              </div>
+              
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- Features -->
+      <section class="container py-5 my-md-3 my-lg-4 my-xl-5">
+        <div class="row align-items-center align-items-xl-end py-2 pb-sm-3">
+          <div class="col-md-6 mb-5 mb-md-0">
+            <div style="max-width: 570px;">
+              <h2 class="h1 pb-3 mb-2 mb-md-3">Intuitive Interface, Powerful Tools, Exceptional Support</h2>
+              <div class="row row-cols-1 row-cols-sm-2 gx-lg-5 g-4">
+                <div class="col d-md-flex d-xl-block align-items-center pt-1 pt-sm-2 pt-md-0 pt-xl-3">
+                  <div class="d-table bg-secondary rounded flex-shrink-0 p-2 mb-3 me-md-3 me-xl-0">
+                    <img src="assets/img/landing/app-showcase/features/payments.svg" width="19" class="d-block m-1" alt="Icon">
+                  </div>
+                  <h3 class="h5 pb-sm-1 mb-2">
+                    <span class="d-md-none d-xl-block">Reliable on-ramp and off-ramp</span>
+                    <span class="fs-base text-nav d-none d-md-block d-xl-none">Reliable on-ramp and off-ramp</span>
+                  </h3>
+                  <p class="fs-sm mb-0 d-md-none d-xl-block">Securely access and withdraw funds into and from the Intuition Exchange platform with our trusted and efficient service.</p>
+                </div>
+                <div class="col d-md-flex d-xl-block align-items-center pt-1 pt-sm-2 pt-md-0 pt-xl-3">
+                  <div class="d-table bg-secondary rounded flex-shrink-0 p-2 mb-3 me-md-3 me-xl-0">
+                    <img src="assets/img/landing/app-showcase/features/cashback.svg" width="19" class="d-block m-1" alt="Icon">
+                  </div>
+                  <h3 class="h5 pb-sm-1 mb-2">
+                    <span class="d-md-none d-xl-block">Zero Hidden Charges</span>
+                    <span class="fs-base text-nav d-none d-md-block d-xl-none">Zero Hidden Charges</span>
+                  </h3>
+                  <p class="fs-sm mb-0 d-md-none d-xl-block">Enjoy transparent transactions without any hidden fees when buying or selling assets digital assets on Intuition Exchange.</p>
+                </div>
+                <div class="col d-md-flex d-xl-block align-items-center pt-1 pt-sm-2 pt-md-0 pt-xl-3">
+                  <div class="d-table bg-secondary rounded flex-shrink-0 p-2 mb-3 me-md-3 me-xl-0">
+                    <img src="assets/img/landing/app-showcase/features/statistics.svg" width="19" class="d-block m-1" alt="Icon">
+                  </div>
+                  <h3 class="h5 pb-sm-1 mb-2">
+                    <span class="d-md-none d-xl-block">Detailed Growth Reports</span>
+                    <span class="fs-base text-nav d-none d-md-block d-xl-none">Detailed Growth Reports</span>
+                  </h3>
+                  <p class="fs-sm mb-0 d-md-none d-xl-block">Access comprehensive analytics and insights into your trading activity and portfolio performance.</p>
+                </div>
+                <div class="col d-md-flex d-xl-block align-items-center pt-1 pt-sm-2 pt-md-0 pt-xl-3">
+                  <div class="d-table bg-secondary rounded flex-shrink-0 p-2 mb-3 me-md-3 me-xl-0">
+                    <img src="assets/img/landing/app-showcase/features/security.svg" width="19" class="d-block m-1" alt="Icon">
+                  </div>
+                  <h3 class="h5 pb-sm-1 mb-2">
+                    <span class="d-md-none d-xl-block">Data Shield</span>
+                    <span class="fs-base text-nav d-none d-md-block d-xl-none">Data Shield</span>
+                  </h3>
+                  <p class="fs-sm mb-0 d-md-none d-xl-block">Your personal information is safeguarded with advanced encryption protocols and never shared with an external party.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="rellax position-relative rounded-3 mb-xl-5" style="box-shadow: -7px 12px 60px 0 rgba(126,123,160, .12);" data-rellax-percentage="0.5" data-rellax-speed="1.3" data-disable-parallax-down="xl">
+              <img src="assets/img/landing/app-showcase/stats.jpg" class="d-block rounded-3" alt="Stats screen">
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      
+
+
+      <!-- Testimonials -->
+    
+
+
+      <!-- Download app CTA 
+      <section class="dark-mode bg-dark position-relative pt-lg-4 pt-xl-5 overflow-hidden">
+        <div class="position-absolute top-0 start-0 w-100 h-100 bg-secondary"></div>
+        <div class="container position-relative zindex-3 pt-5">
+          <div class="row pt-2 pt-sm-3 pt-md-4">
+            <div class="col-md-6 col-xl-5 col-xxl-4 text-center text-md-start pb-4 pb-sm-5 mb-2 mb-md-3 mb-lg-4 mb-xl-5">
+              <h2 class="h1 mb-5">Coming Soon: Apps For All Major Platforms</h2>
+              <div class="d-flex d-md-block mt-n2 mt-sm-0">
+                <div class="row row-cols-1 row-cols-lg-2 align-items-lg-end me-1 me-md-0 pb-md-4 mb-md-3">
+                  <div class="col">
+                    <h3 class="fs-base fw-normal opacity-60 mb-2">iOS App Store</h3>
+                    <div class="text-nowrap text-warning pb-1 mb-2">
+                      <i class="bx bxs-star"></i>
+                      <i class="bx bxs-star"></i>
+                      <i class="bx bxs-star"></i>
+                      <i class="bx bxs-star"></i>
+                      <i class="bx bxs-star"></i>
+                    </div>
+                    <h4 class="mb-1">Editor's Choice</h4>
+                    <p class="mb-0">rating 4.7, 187K+ reviews</p>
+                  </div>
+                  <div class="col d-xl-flex justify-content-end">
+                    <a href="#" class="btn btn-dark btn-lg w-xl-100 px-3 py-2 ms-xl-3 mt-3 mt-lg-0">
+                      <img src="assets/img/market/appstore-light.svg" class="light-mode-img" width="124" alt="App Store">
+                      <img src="assets/img/market/appstore-dark.svg" class="dark-mode-img" width="124" alt="App Store">
+                    </a>
+                  </div>
+                </div>
+                <div class="row row-cols-1 row-cols-lg-2 align-items-lg-end">
+                  <div class="col">
+                    <h3 class="fs-base fw-normal opacity-60 mb-2">Google Play</h3>
+                    <div class="text-nowrap text-warning pb-1 mb-2">
+                      <i class="bx bxs-star"></i>
+                      <i class="bx bxs-star"></i>
+                      <i class="bx bxs-star"></i>
+                      <i class="bx bxs-star"></i>
+                      <i class="bx bxs-star"></i>
+                    </div>
+                    <h4 class="mb-1">App of the Day</h4>
+                    <p class="mb-0">rating 4.8, 30K+ reviews</p>
+                  </div>
+                  <div class="col d-xl-flex justify-content-end">
+                    <a href="#" class="btn btn-dark btn-lg w-xl-100 px-3 py-2 ms-xl-3 mt-3 mt-lg-0">
+                      <img src="assets/img/market/googleplay-light.svg" class="light-mode-img" width="139" alt="Google Play">
+                      <img src="assets/img/market/googleplay-dark.svg" class="dark-mode-img" width="139" alt="Google Play">
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6 col-xl-7 col-xxl-8">
+              <img src="assets/img/landing/app-showcase/devices.png" width="618" class="rellax d-block mx-auto" alt="Devices" data-rellax-percentage="0.5" data-rellax-speed="1" data-disable-parallax-down="lg">
+              <div class="d-none d-xl-block" style="margin-bottom: -450px;"></div>
+              <div class="d-none d-lg-block d-xl-none" style="margin-bottom: -800px;"></div>
+              <div class="d-none d-sm-block d-lg-none" style="margin-bottom: -400px;"></div>
+              <div class="d-sm-none" style="margin-bottom: -240px;"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+      -->
+
+
+      <!-- Info links -->
+      <section class="container pt-5 pb-4 pb-sm-5 mb-2 mb-sm-0 mb-lg-3 mb-xl-4 mt-md-2 mt-lg-4 mt-xl-5">
+        <div class="row row-cols-1 row-cols-sm-3 pt-sm-3 py-2">
+          <div class="col d-flex d-sm-block d-lg-flex align-items-start mb-3 mb-sm-0">
+            <div class="d-table bg-primary shadow-primary rounded flex-shrink-0 p-2 mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" fill="#ffffff" class="bi bi-arrow-left-right" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M1 11.5a.5.5 0 0 0 .5.5h11.793l-3.147 3.146a.5.5 0 0 0 .708.708l4-4a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 11H1.5a.5.5 0 0 0-.5.5m14-7a.5.5 0 0 1-.5.5H2.707l3.147 3.146a.5.5 0 1 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L2.707 4H14.5a.5.5 0 0 1 .5.5"/>
+              </svg>
+            </div>
+            <div class="ps-4 ps-sm-0 ps-lg-4 ms-lg-2 me-xl-2 pe-xl-5">
+              <h3 class="h4 mb-2 mb-md-3">P2P Trades</h3>
+              <p class="mb-1 mb-md-2">Direct peer-to-peer trading option with all asset types.</p>
+              
+            </div>
+          </div>
+          <div class="col d-flex d-sm-block d-lg-flex align-items-start mb-3 mb-sm-0">
+            <div class="d-table bg-primary shadow-primary rounded flex-shrink-0 p-2 mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" fill="#ffffff" class="bi bi-person-vcard" viewBox="0 0 16 16">
+                <path d="M5 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4m4-2.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5M9 8a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4A.5.5 0 0 1 9 8m1 2.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5"/>
+                <path d="M2 2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM1 4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H8.96q.04-.245.04-.5C9 10.567 7.21 9 5 9c-2.086 0-3.8 1.398-3.984 3.181A1 1 0 0 1 1 12z"/>
+              </svg>
+            </div>
+            <div class="ps-4 ps-sm-0 ps-lg-4 ms-lg-2 pe-xl-5">
+              <h3 class="h4 mb-2 mb-md-3">KYC & AML</h3>
+              <p class="mb-1 mb-md-2">KYC and AML compliance for secure and regulated transactions.</p>
+              
+            </div>
+          </div>
+          <div class="col d-flex d-sm-block d-lg-flex align-items-start">
+            <div class="d-table bg-primary shadow-primary rounded flex-shrink-0 p-2 mb-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" fill="#ffffff" class="bi bi-shield-lock" viewBox="0 0 16 16">
+                <path d="M5.338 1.59a61 61 0 0 0-2.837.856.48.48 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.7 10.7 0 0 0 2.287 2.233c.346.244.652.42.893.533q.18.085.293.118a1 1 0 0 0 .101.025 1 1 0 0 0 .1-.025q.114-.034.294-.118c.24-.113.547-.29.893-.533a10.7 10.7 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.8 11.8 0 0 1-2.517 2.453 7 7 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7 7 0 0 1-1.048-.625 11.8 11.8 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 63 63 0 0 1 5.072.56"/>
+                <path d="M9.5 6.5a1.5 1.5 0 0 1-1 1.415l.385 1.99a.5.5 0 0 1-.491.595h-.788a.5.5 0 0 1-.49-.595l.384-1.99a1.5 1.5 0 1 1 2-1.415"/>
+              </svg>
+            </div>
+            <div class="ps-4 ps-sm-0 ps-lg-4 ms-lg-2 pe-xl-5">
+              <h3 class="h4 mb-2 mb-md-3">Multisig Wallets</h3>
+              <p class="mb-1 mb-md-2">Enhanced security with multi-signature authentication for transactions.</p>
+              
+            </div>
+            
+          </div>
+          
+        </div>
+      </section>
+
+
+      <!-- Divider -->
+      <div class="container mb-md-2 mb-lg-4"><hr></div>
+    </main>
+
+
+    <!-- Footer -->
+    <footer class="footer pt-5 pb-4 pb-lg-5">
+      <div class="container text-center pt-lg-3">
+        <div class="navbar-brand justify-content-center text-dark mb-2 mb-lg-4">
+          <img src="assets/img/intuition-logo.svg" class="me-2" width="42px" alt="InTuition Exchange">
+          <span class="fs-4">InTuition Exchange</span>
+        </div>
+
+        <!-- Footer links - app buttons
+        <ul class="nav justify-content-center pt-3 pb-4 pb-lg-5">
+          <li class="nav-item"><a href="#" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="#" class="nav-link">Features</a></li>
+          <li class="nav-item"><a href="#" class="nav-link">Overview</a></li>
+          <li class="nav-item"><a href="#" class="nav-link">Blog</a></li>
+          <li class="nav-item"><a href="#" class="nav-link">Contacts</a></li>
+          <li class="nav-item"><a href="#" class="nav-link">Account</a></li>
+        </ul>
+        
+        
+          <div class="d-flex flex-column flex-sm-row justify-content-center">
+          <a href="#" class="btn btn-dark btn-lg px-3 py-2 me-sm-4 mb-3">
+            <img src="assets/img/market/appstore-light.svg" class="light-mode-img" width="124" alt="App Store">
+            <img src="assets/img/market/appstore-dark.svg" class="dark-mode-img" width="124" alt="App Store">
+          </a>
+          <a href="#" class="btn btn-dark btn-lg px-3 py-2 mb-3">
+            <img src="assets/img/market/googleplay-light.svg" class="light-mode-img" width="139" alt="Google Play">
+            <img src="assets/img/market/googleplay-dark.svg" class="dark-mode-img" width="139" alt="Google Play">
+          </a>
+        </div>
+        -->
+      
+
+        <div class="d-flex justify-content-center pt-4 mt-lg-3">
+          <a href="https://www.facebook.com/Coinsforcollege/" target="_blank" class="btn btn-icon btn-secondary btn-facebook mx-2">
+            <i class="bx bxl-facebook"></i>
+          </a>
+          <a href="#" class="btn btn-icon btn-secondary btn-instagram mx-2">
+            <i class="bx bxl-instagram"></i>
+          </a>
+          <a href="#" class="btn btn-icon btn-secondary btn-twitter mx-2">
+            <i class="bx bxl-twitter"></i>
+          </a>
+          <a href="#" class="btn btn-icon btn-secondary btn-youtube mx-2">
+            <i class="bx bxl-youtube"></i>
+          </a>
+        </div>
+        <p class="nav d-block fs-sm text-center pt-5 mt-lg-4 mb-0">
+          <span class="opacity-80">&copy; Intuition Exchange. All rights reserved.
+        </p>
+      </div>
+    </footer>
+
+
+    <!-- Back to top button -->
+    <a href="#top" class="btn-scroll-top" data-scroll>
+      <span class="btn-scroll-top-tooltip text-muted fs-sm me-2">Top</span>
+      <i class="btn-scroll-top-icon bx bx-chevron-up"></i>
+    </a>
+
+
+    <!-- Vendor Scripts -->
+    <script src="assets/vendor/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/vendor/smooth-scroll/dist/smooth-scroll.polyfills.min.js"></script>
+    <script src="assets/vendor/parallax-js/dist/parallax.min.js"></script>
+    <script src="assets/vendor/rellax/rellax.min.js"></script>
+    <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+    <!-- Main Theme Script -->
+    <script src="assets/js/theme.min.js"></script>
+  </body>
+</html>
