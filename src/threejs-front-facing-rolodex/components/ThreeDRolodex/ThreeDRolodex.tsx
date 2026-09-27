@@ -139,6 +139,23 @@ const SWAY_LIMIT = 0.28;
  */
 const SWAY_GAIN = 3;
 
+/**
+ * The longest step the sway integrator may take, in seconds.
+ *
+ * `useFrame` hands the physics whatever delta the frame loop produced.  While
+ * the wheel is settling that is a normal frame — 16 ms — but the clock asks for
+ * a frame of its own once a second, and that frame arrives with a delta of 1.0.
+ * A step that long is past the integrator's stability limit: with SWAY_DAMPING
+ * at 6.4 it multiplies a card's velocity by about 6.4 instead of damping it, so
+ * every clock tick threw the cards back into motion.  The settle test in the
+ * frame loop could then never be satisfied, and the scene rendered at 60 fps
+ * forever — a still image with a still wheel, holding the GPU at ~80%.
+ *
+ * Clamped, the impulse a clock tick can inject is proportional to the sway that
+ * is already there, so a card that has come to rest stays at rest.
+ */
+const MAX_FRAME_STEP = 1 / 30;
+
 const AXLE_LENGTH = 7.15;
 
 /**
@@ -622,6 +639,14 @@ function RolodexScene({
   const step = TAU / projects.length;
 
   useFrame((_, delta) => {
+    // The frame loop's delta is the real time since the last frame, which is
+    // not the same thing as a simulation step: the clock's once-a-second
+    // invalidate produces a 1.0 second gap on an otherwise idle scene.  The
+    // rotation may take that step — damp is exponential and stable at any
+    // delta — but the sway integrator may not.  See MAX_FRAME_STEP.
+    const dt = Math.min(delta, MAX_FRAME_STEP);
+    const sparse = delta > MAX_FRAME_STEP;
+
     const rotation = THREE.MathUtils.damp(
       actualRotationRef.current,
       targetRotationRef.current,
@@ -629,10 +654,13 @@ function RolodexScene({
       delta
     );
     const previousRotation = previousRotationRef.current;
+    // A frame that arrives after a gap says nothing trustworthy about how the
+    // cards are accelerating — nobody watched the interval it covers — so it
+    // excites nothing and only carries the rotation on.
     const angularVelocity =
-      delta > 0 ? (rotation - previousRotation) / delta : 0;
+      !sparse && delta > 0 ? (rotation - previousRotation) / delta : 0;
     const angularAcceleration =
-      delta > 0
+      !sparse && delta > 0
         ? (angularVelocity - previousVelocityRef.current) / delta
         : 0;
     previousRotationRef.current = rotation;
@@ -686,15 +714,23 @@ function RolodexScene({
           0.5
         );
 
-        const restoring =
-          (equilibrium - swayRef.current[index]) * SWAY_STIFFNESS -
-          swayVelocityRef.current[index] * SWAY_DAMPING;
-        swayVelocityRef.current[index] += restoring * delta;
-        swayRef.current[index] = THREE.MathUtils.clamp(
-          swayRef.current[index] + swayVelocityRef.current[index] * delta,
-          -SWAY_LIMIT,
-          SWAY_LIMIT
-        );
+        // The cards are only integrated on frames that actually observed the
+        // interval.  A sparse frame — the clock's tick — is not evidence of
+        // anything having moved, and integrating it would inject a force
+        // proportional to the sway it found, which is the mechanism that used
+        // to keep the loop alive.  The rotation is still written, because the
+        // wheel really did advance.
+        if (!sparse) {
+          const restoring =
+            (equilibrium - swayRef.current[index]) * SWAY_STIFFNESS -
+            swayVelocityRef.current[index] * SWAY_DAMPING;
+          swayVelocityRef.current[index] += restoring * dt;
+          swayRef.current[index] = THREE.MathUtils.clamp(
+            swayRef.current[index] + swayVelocityRef.current[index] * dt,
+            -SWAY_LIMIT,
+            SWAY_LIMIT
+          );
+        }
 
         card.rotation.x = rotation + swayRef.current[index];
       });
@@ -702,17 +738,31 @@ function RolodexScene({
 
     // Keep frames coming while the wheel is settling or any card is still
     // swinging, then let the loop go quiet.  This is what makes an idle scene
-    // cost nothing.
+    // cost nothing — and it only holds because the integrator above is stepped
+    // with a clamped dt: an unclamped 1-second frame would re-excite the cards
+    // on every clock tick and this test would never pass.
     const swayPeak = Math.max(0, ...swayRef.current.map(Math.abs));
     const swayVelocityPeak = Math.max(
       0,
       ...swayVelocityRef.current.map(Math.abs)
     );
-    if (
-      Math.abs(rotation - targetRotationRef.current) > 0.0005 ||
-      swayPeak > 0.0005 ||
-      swayVelocityPeak > 0.0005
-    ) {
+
+    const settled =
+      Math.abs(rotation - targetRotationRef.current) <= 0.0005 &&
+      swayPeak <= 0.0005 &&
+      swayVelocityPeak <= 0.0005;
+
+    // At rest means at rest.  The loop stops on the first frame whose peak is
+    // under the threshold, which can leave a residue well below a hundredth of
+    // a degree — invisible, but it would park the cards off plumb, and since
+    // sparse frames no longer integrate it would never decay away.  Zeroing it
+    // also means every later frame has nothing to compute.
+    if (settled && (swayPeak > 0 || swayVelocityPeak > 0)) {
+      swayRef.current.fill(0);
+      swayVelocityRef.current.fill(0);
+    }
+
+    if (!settled) {
       invalidate();
     }
   });
