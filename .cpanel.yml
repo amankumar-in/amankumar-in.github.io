@@ -1,7 +1,0 @@
----
-deployment:
-      tasks:
-        - export DEPLOYPATH=/home/o5t6x7pgljbm/public_html/intuitionexchange.com
-        - /bin/cp -r * $DEPLOYPATH
-        
-        
