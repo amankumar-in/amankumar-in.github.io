@@ -1,0 +1,5 @@
+Required packages:
+
+npm install three @react-three/fiber @react-three/drei
+
+For React 19, use React Three Fiber v9 (current stable) rather than the v10 alpha.

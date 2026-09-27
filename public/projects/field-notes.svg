@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000" role="img" aria-label="Placeholder image for Field Notes">
+  <rect width="800" height="1000" fill="#14151a"/>
+  <rect x="48" y="48" width="704" height="904" fill="none" stroke="#4c4f5e" stroke-width="2"/>
+  <circle cx="400" cy="420" r="120" fill="#34d399" fill-opacity="0.18" stroke="#34d399" stroke-width="2"/>
+  <text x="400" y="640" fill="#f3f4f6" font-family="system-ui, sans-serif" font-size="44" text-anchor="middle">Field Notes</text>
+  <text x="400" y="692" fill="#9ca3af" font-family="system-ui, sans-serif" font-size="24" text-anchor="middle">placeholder image</text>
+</svg>
