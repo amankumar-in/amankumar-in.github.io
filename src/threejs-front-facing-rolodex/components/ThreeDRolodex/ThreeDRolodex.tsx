@@ -1,15 +1,22 @@
 "use client";
 
 import * as THREE from "three";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import {
   ContactShadows,
   Environment,
   Image as DreiImage,
-  Lightformer,
   RoundedBox,
+  SoftShadows,
+  useGLTF,
 } from "@react-three/drei";
+import {
+  DepthOfField,
+  EffectComposer,
+  N8AO,
+  Vignette,
+} from "@react-three/postprocessing";
 import {
   Suspense,
   forwardRef,
@@ -124,20 +131,116 @@ const DESK_Y = GROUND_Y + DESK_FOOT_HEIGHT / 2;
 const DESK_UPRIGHT_HEIGHT = WHEEL_Y - DESK_Y - 0.04;
 
 /**
- * The room the assembly stands in: a veneer desk top under it and a wall behind.
- *
- * These are model units and live inside the same scaled group as the model, so
- * the setting stays proportional to it at every viewport size.  The desk's top
- * face is the ground the stand's feet rest on.
+ * The scene is built at real scale.  A rolodex card is 5 inches wide — 0.127 m —
+ * and the model's card is CARD_WIDTH units, so that ratio is how many units make
+ * a metre.  Every real-world measurement (the desk, the lighting rig, the depth
+ * of field) follows from it instead of being eyeballed.
  */
-const DESK_TOP = GROUND_Y;
-const DESK_WIDTH = 26;
-const DESK_DEPTH = 22;
-const DESK_BACK_Z = -9;
-const DESK_THICKNESS = 1.6;
-const WALL_Z = -8;
-const WALL_HEIGHT = 30;
-const WALL_HALF_WIDTH = 15;
+const UNITS_PER_METRE = CARD_WIDTH / 0.127;
+
+/** A real wooden table, modelled in metres, standing in for the desk. */
+const DESK_URL = "/models/woodentable01/WoodenTable_01_1k.gltf";
+
+/** A photographed studio room, used for the light, the reflections and the
+ *  blurred backdrop. */
+const ROOM_HDRI = "/hdri/art_studio_1k.hdr";
+
+/**
+ * The office the desk stands in.
+ *
+ * The wall is a real plane, not a background image: a background sits at
+ * infinity, so it has no parallax and reads flat at any distance.  Both
+ * textures publish their physical size (beige_wall_001 is a 3 m scan,
+ * concrete_floor_painted a 2 m one), so the repeats are set in metres instead of
+ * being eyeballed.
+ */
+const WALL_MAPS = [
+  "/textures/wall/beige_wall_001_diff_1k.jpg",
+  "/textures/wall/beige_wall_001_nor_gl_1k.jpg",
+  "/textures/wall/beige_wall_001_rough_1k.jpg",
+];
+const FLOOR_MAPS = [
+  "/textures/floor/concrete_floor_painted_diff_1k.jpg",
+  "/textures/floor/concrete_floor_painted_nor_gl_1k.jpg",
+  "/textures/floor/concrete_floor_painted_arm_1k.jpg",
+];
+
+const WALL_TEXTURE_METRES = 3;
+const FLOOR_TEXTURE_METRES = 2;
+
+/**
+ * The desk's own footprint, measured from its glTF: 1.8 × 0.549 × 0.657 m.  Its
+ * height sets where the office floor is, and its depth sets how far the wall
+ * stands behind it.
+ */
+const DESK_HEIGHT_METRES = 0.549;
+const DESK_DEPTH_METRES = 0.657;
+
+const ROOM_WIDTH_METRES = 12;
+const WALL_HEIGHT_METRES = 7;
+/** How far the wall stands behind the desk. */
+const ROOM_DEPTH_METRES = 6;
+const SKIRTING_HEIGHT_METRES = 0.1;
+const SKIRTING_DEPTH_METRES = 0.02;
+
+const DOOR_WIDTH_METRES = 0.9;
+const DOOR_HEIGHT_METRES = 2.05;
+const DOOR_THICKNESS_METRES = 0.045;
+const DOOR_CASING_METRES = 0.08;
+const DOOR_CASING_DEPTH_METRES = 0.06;
+/** Offset from the centre of the shot, so the doorway sits off to the left and
+ *  clear of the piece's own silhouette (which projects to about ±0.96 m on the
+ *  wall). */
+const DOOR_OFFSET_METRES = -1.55;
+const HANDLE_HEIGHT_METRES = 1.05;
+
+/** The office floor: the level the desk's legs stand on. */
+const FLOOR_LEVEL = GROUND_Y - DESK_HEIGHT_METRES * UNITS_PER_METRE;
+const WALL_Z = -(DESK_DEPTH_METRES / 2 + ROOM_DEPTH_METRES) * UNITS_PER_METRE;
+
+const FLOOR_FRONT_METRES = 4;
+const FLOOR_BACK_METRES = ROOM_DEPTH_METRES + DESK_DEPTH_METRES;
+const FLOOR_DEPTH_METRES = FLOOR_FRONT_METRES + FLOOR_BACK_METRES;
+const FLOOR_CENTRE_Z =
+  ((FLOOR_FRONT_METRES - FLOOR_BACK_METRES) / 2) * UNITS_PER_METRE;
+
+/** The same dimensions in model units, so the JSX stays readable. */
+const ROOM_WIDTH = ROOM_WIDTH_METRES * UNITS_PER_METRE;
+const WALL_HEIGHT = WALL_HEIGHT_METRES * UNITS_PER_METRE;
+const FLOOR_DEPTH = FLOOR_DEPTH_METRES * UNITS_PER_METRE;
+const SKIRTING_HEIGHT = SKIRTING_HEIGHT_METRES * UNITS_PER_METRE;
+const SKIRTING_DEPTH = SKIRTING_DEPTH_METRES * UNITS_PER_METRE;
+const DOOR_WIDTH = DOOR_WIDTH_METRES * UNITS_PER_METRE;
+const DOOR_HEIGHT = DOOR_HEIGHT_METRES * UNITS_PER_METRE;
+const DOOR_THICKNESS = DOOR_THICKNESS_METRES * UNITS_PER_METRE;
+const DOOR_STILE = 0.08 * UNITS_PER_METRE;
+const DOOR_RAIL = 0.1 * UNITS_PER_METRE;
+const DOOR_GLASS = 0.02 * UNITS_PER_METRE;
+const DOOR_CASING = DOOR_CASING_METRES * UNITS_PER_METRE;
+const DOOR_CASING_DEPTH = DOOR_CASING_DEPTH_METRES * UNITS_PER_METRE;
+const DOOR_X = DOOR_OFFSET_METRES * UNITS_PER_METRE;
+const HANDLE_HEIGHT = HANDLE_HEIGHT_METRES * UNITS_PER_METRE;
+
+/** Planters standing on the floor against the wall, to the right of the piece. */
+const PLANTERS: { url: string; x: number; scale: number; turn: number }[] = [
+  {
+    url: "/models/planter_box_01/planter_box_01_1k.gltf",
+    x: 1.2,
+    scale: 0.8,
+    turn: 0.35,
+  },
+  {
+    url: "/models/planter_box_02/planter_box_02_1k.gltf",
+    x: 2.15,
+    scale: 0.8,
+    turn: -0.45,
+  },
+];
+
+/** A small analogue clock, high on the wall, reading the real time. */
+const CLOCK_X = 1.15 * UNITS_PER_METRE;
+const CLOCK_Y = 1.9 * UNITS_PER_METRE;
+const CLOCK_RADIUS = (0.25 / 2) * UNITS_PER_METRE;
 
 /** Share of the viewport the model is allowed to fill. */
 const FRAMING_MARGIN = 0.9;
@@ -365,8 +468,8 @@ export default function ThreeDRolodex({
             camera={{
               position: [0, 0, 12.2],
               fov: 34,
-              near: 0.1,
-              far: 50,
+              near: 0.5,
+              far: 400,
             }}
             gl={{
               antialias: true,
@@ -382,6 +485,24 @@ export default function ThreeDRolodex({
                 onCardClick={handleCardClick}
               />
             </Suspense>
+
+            {/* Post, in order: ambient occlusion seats the parts against the
+                desk; the lens blur holds focus on the piece at 12.2 units and
+                lets the room fall away; the vignette closes the frame. */}
+            <EffectComposer multisampling={4}>
+              <N8AO
+                halfRes={false}
+                aoRadius={1.6}
+                intensity={2.2}
+                distanceFalloff={1}
+              />
+              <DepthOfField
+                worldFocusDistance={12.2}
+                worldFocusRange={5}
+                bokehScale={3}
+              />
+              <Vignette offset={0.2} darkness={0.42} />
+            </EffectComposer>
           </Canvas>
         </div>
       </div>
@@ -509,21 +630,28 @@ function RolodexScene({
 
   return (
     <>
-      <color attach="background" args={["#f4f1ec"]} />
+      {/* Fallback clear colour; the office wall covers it. */}
+      <color attach="background" args={["#e8e4dd"]} />
 
-      {/* A soft studio rig.  The Environment below does most of the work through
-          reflections and fill; the direct lights add shape, and the key light
-          carries the cast shadow. */}
-      <ambientLight intensity={0.45} />
-      <hemisphereLight
-        intensity={0.35}
-        color="#ffffff"
-        groundColor="#d8d8d8"
+      {/* The room's light: a photographed studio, used for the environment and
+          reflections.  Its own backdrop is deliberately not used — see the Room
+          component for why. */}
+      <Environment
+        files={ROOM_HDRI}
+        backgroundBlurriness={0.55}
+        environmentIntensity={1}
       />
+
+      {/* Widens the shadow penumbra so the cast shadow reads as diffuse daylight
+          rather than a hard-edged stencil. */}
+      <SoftShadows size={26} samples={16} focus={0.6} />
+
+      {/* The HDRI carries the fill and the reflections; one key light adds a
+          definite shadow across the desk. */}
       <directionalLight
         castShadow
-        position={[5, 8, 10]}
-        intensity={1.9}
+        position={[4, 7, 9]}
+        intensity={1.15}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
         shadow-mapSize-width={2048}
@@ -535,43 +663,6 @@ function RolodexScene({
         shadow-camera-top={8}
         shadow-camera-bottom={-8}
       />
-      <pointLight
-        position={[-6, -1, 6]}
-        intensity={0.3}
-        color="#f2f5ff"
-      />
-
-      {/* White studio boxes, rendered into a cube map so the metal has something
-          to reflect without loading an external HDRI. */}
-      <Environment resolution={256}>
-        <Lightformer
-          form="rect"
-          intensity={3}
-          position={[0, 6, -9]}
-          rotation-x={Math.PI / 4}
-          scale={[12, 12, 1]}
-        />
-        <Lightformer
-          form="rect"
-          intensity={2}
-          position={[-6, 2, 1]}
-          rotation-y={Math.PI / 2}
-          scale={[16, 6, 1]}
-        />
-        <Lightformer
-          form="rect"
-          intensity={2}
-          position={[6, 2, 1]}
-          rotation-y={-Math.PI / 2}
-          scale={[16, 6, 1]}
-        />
-        <Lightformer
-          form="ring"
-          intensity={2.5}
-          position={[0, 8, 2]}
-          scale={3}
-        />
-      </Environment>
 
       {/* The room itself lives inside the scaled group, next to the model. */}
       <group
@@ -579,6 +670,12 @@ function RolodexScene({
         scale={fitScale}
       >
         <Room />
+
+        <Planters />
+
+        <Clock />
+
+        <Desk />
 
         <Mechanism ref={mechanismRef} cardCount={projects.length}>
           {/* Cards ride inside the wheel, so the shared rotation above carries
@@ -602,7 +699,7 @@ function RolodexScene({
 
       <ContactShadows
         position={[0, floorY + 0.012, 0]}
-        opacity={0.3}
+        opacity={0.24}
         scale={13 * fitScale}
         blur={2.8}
         far={8}
@@ -909,106 +1006,410 @@ function ProjectCard3D({
 }
 
 /**
- * Procedural veneer for the desk top: a warm base, long grain running the length
- * of the desk, and seams between laid leaves.  Drawn to a canvas, so the
- * component needs no image files.
+ * A small analogue clock on the wall, reading the actual time.
+ *
+ * The hands are driven from Date every frame, so it always shows the current
+ * time.  It also earns its place as a scale reference: everyone knows roughly
+ * how big a wall clock is, which is exactly the kind of anchor a plain wall
+ * lacks.
  */
-function makeVeneerTexture(): THREE.Texture | null {
-  const size = 512;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
+function Clock() {
+  const hourRef = useRef<THREE.Group>(null);
+  const minuteRef = useRef<THREE.Group>(null);
+  const secondRef = useRef<THREE.Group>(null);
 
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
+  useFrame(() => {
+    const now = new Date();
+    const seconds = now.getSeconds() + now.getMilliseconds() / 1000;
+    const minutes = now.getMinutes() + seconds / 60;
+    const hours = (now.getHours() % 12) + minutes / 60;
 
-  ctx.fillStyle = "#96663e";
-  ctx.fillRect(0, 0, size, size);
+    if (hourRef.current) {
+      hourRef.current.rotation.z = -(hours / 12) * TAU;
+    }
+    if (minuteRef.current) {
+      minuteRef.current.rotation.z = -(minutes / 60) * TAU;
+    }
+    if (secondRef.current) {
+      secondRef.current.rotation.z = -(seconds / 60) * TAU;
+    }
+  });
 
-  // Long grain.
-  for (let i = 0; i < 1600; i++) {
-    const alpha = 0.03 + Math.random() * 0.05;
-    ctx.fillStyle =
-      Math.random() > 0.45
-        ? `rgba(255, 223, 183, ${alpha})`
-        : `rgba(64, 34, 16, ${alpha})`;
-    ctx.fillRect(0, Math.random() * size, size, 0.5 + Math.random() * 2.5);
-  }
-
-  // Figure in the veneer.
-  for (let i = 0; i < 26; i++) {
-    ctx.fillStyle = `rgba(84, 46, 22, ${0.05 + Math.random() * 0.06})`;
-    ctx.fillRect(0, Math.random() * size, size, 2 + Math.random() * 10);
-  }
-
-  // Seams between leaves of veneer.
-  ctx.fillStyle = "rgba(48, 25, 11, 0.5)";
-  for (const x of [0.34, 0.67]) {
-    ctx.fillRect(x * size - 1.5, 0, 3, size);
-  }
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(2, 2);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-/** A soft vertical wash, so the wall reads as a surface rather than a void. */
-function makeWallTexture(): THREE.Texture | null {
-  const canvas = document.createElement("canvas");
-  canvas.width = 4;
-  canvas.height = 256;
-
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return null;
-
-  const wash = ctx.createLinearGradient(0, 0, 0, 256);
-  wash.addColorStop(0, "#ffffff");
-  wash.addColorStop(0.6, "#f2eee7");
-  wash.addColorStop(1, "#ded6c9");
-  ctx.fillStyle = wash;
-  ctx.fillRect(0, 0, 4, 256);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
-/**
- * The room the assembly stands in: a veneer desk top at the height the stand
- * rests on, and a wall rising behind it.  Both live inside the model's own
- * scaled group, so the setting stays in proportion at every viewport size.
- */
-function Room() {
-  const veneer = useMemo(() => makeVeneerTexture(), []);
-  const wallWash = useMemo(() => makeWallTexture(), []);
+  const marks = useMemo(
+    () => Array.from({ length: 12 }, (_, index) => (index / 12) * TAU),
+    []
+  );
 
   return (
-    <group>
-      {/* Desk top.  Its upper face is exactly the ground the feet rest on. */}
-      <mesh
-        position={[
-          0,
-          DESK_TOP - DESK_THICKNESS / 2,
-          DESK_BACK_Z + DESK_DEPTH / 2,
-        ]}
-        castShadow
-        receiveShadow
-      >
-        <boxGeometry args={[DESK_WIDTH, DESK_THICKNESS, DESK_DEPTH]} />
-        <meshStandardMaterial map={veneer} roughness={0.44} metalness={0} />
+    <group position={[CLOCK_X, FLOOR_LEVEL + CLOCK_Y, WALL_Z + 1]}>
+      {/* Case */}
+      <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <cylinderGeometry args={[CLOCK_RADIUS, CLOCK_RADIUS, 1.6, 40]} />
+        <meshStandardMaterial color="#c8cacd" roughness={0.34} metalness={0.72} />
       </mesh>
 
-      {/* Wall behind, rising from the desk's back edge. */}
-      <mesh position={[0, DESK_TOP + WALL_HEIGHT / 2, WALL_Z]} receiveShadow>
-        <planeGeometry args={[WALL_HALF_WIDTH * 2, WALL_HEIGHT]} />
-        <meshStandardMaterial map={wallWash} roughness={0.95} metalness={0} />
+      {/* Dial */}
+      <mesh position={[0, 0, 0.85]}>
+        <circleGeometry args={[CLOCK_RADIUS * 0.93, 40]} />
+        <meshStandardMaterial color="#fbfaf7" roughness={0.62} metalness={0} />
+      </mesh>
+
+      {/* Hour marks */}
+      {marks.map((angle) => (
+        <mesh
+          key={angle}
+          position={[
+            Math.sin(angle) * CLOCK_RADIUS * 0.76,
+            Math.cos(angle) * CLOCK_RADIUS * 0.76,
+            0.9,
+          ]}
+          rotation={[0, 0, -angle]}
+        >
+          <boxGeometry args={[0.3, 1, 0.2]} />
+          <meshStandardMaterial color="#3d4045" roughness={0.5} metalness={0.1} />
+        </mesh>
+      ))}
+
+      {/* Hands: each pivots at the dial's centre, so the geometry hangs off one
+          end and the group's z rotation reads the time. */}
+      <group ref={hourRef} position={[0, 0, 1]}>
+        <mesh position={[0, CLOCK_RADIUS * 0.28, 0]}>
+          <boxGeometry args={[0.6, CLOCK_RADIUS * 0.56, 0.22]} />
+          <meshStandardMaterial
+            color="#33363a"
+            roughness={0.45}
+            metalness={0.15}
+          />
+        </mesh>
+      </group>
+
+      <group ref={minuteRef} position={[0, 0, 1.1]}>
+        <mesh position={[0, CLOCK_RADIUS * 0.4, 0]}>
+          <boxGeometry args={[0.42, CLOCK_RADIUS * 0.8, 0.2]} />
+          <meshStandardMaterial
+            color="#33363a"
+            roughness={0.45}
+            metalness={0.15}
+          />
+        </mesh>
+      </group>
+
+      <group ref={secondRef} position={[0, 0, 1.2]}>
+        <mesh position={[0, CLOCK_RADIUS * 0.44, 0]}>
+          <boxGeometry args={[0.18, CLOCK_RADIUS * 0.88, 0.16]} />
+          <meshStandardMaterial
+            color="#8d9095"
+            roughness={0.4}
+            metalness={0.3}
+          />
+        </mesh>
+      </group>
+
+      {/* Centre cap */}
+      <mesh position={[0, 0, 1.35]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.45, 0.45, 0.5, 16]} />
+        <meshStandardMaterial color="#2c2e32" roughness={0.4} metalness={0.3} />
       </mesh>
     </group>
   );
 }
+
+/** One planter box, standing on the floor against the wall. */
+function Planter({
+  url,
+  x,
+  scale,
+  turn,
+}: {
+  url: string;
+  x: number;
+  scale: number;
+  turn: number;
+}) {
+  const { scene } = useGLTF(url);
+
+  const placed = useMemo(() => {
+    const instance = scene.clone(true);
+    instance.scale.setScalar(UNITS_PER_METRE * scale);
+    instance.position.set(x * UNITS_PER_METRE, 0, 0);
+    instance.rotation.y = turn;
+    instance.traverse((child) => {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    });
+    return instance;
+  }, [scene, x, scale, turn]);
+
+  return <primitive object={placed} />;
+}
+
+/**
+ * The planters, lined up on the floor against the wall.  They break the wall's
+ * flatness and give the room some life at the point where it meets the floor.
+ */
+function Planters() {
+  return (
+    <group position={[0, FLOOR_LEVEL, WALL_Z + 0.28 * UNITS_PER_METRE]}>
+      {PLANTERS.map((planter) => (
+        <Planter key={planter.url} {...planter} />
+      ))}
+    </group>
+  );
+}
+
+useGLTF.preload(PLANTERS[0].url);
+useGLTF.preload(PLANTERS[1].url);
+
+/**
+ * The office around the desk: floor, wall, skirting and a doorway.
+ *
+ * The wall is a real plane standing ROOM_DEPTH_METRES behind the desk, which is
+ * the whole point — a background image sits at infinity, so it never shifts
+ * against the subject and reads as flat no matter how far away it supposedly is.
+ * Here the floor runs away to the wall, the wall's foot shadows into the
+ * skirting, and the doorway gives the eye a known-size object to measure the
+ * space against.
+ */
+function Room() {
+  const [wallMap, wallNormal, wallRough] = useLoader(
+    THREE.TextureLoader,
+    WALL_MAPS
+  );
+  const [floorMap, floorNormal, floorArm] = useLoader(
+    THREE.TextureLoader,
+    FLOOR_MAPS
+  );
+
+  useMemo(() => {
+    const prepare = (
+      texture: THREE.Texture,
+      colours: boolean,
+      spanXMetres: number,
+      spanYMetres: number,
+      tileMetres: number
+    ) => {
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.anisotropy = 8;
+      texture.repeat.set(spanXMetres / tileMetres, spanYMetres / tileMetres);
+      if (colours) texture.colorSpace = THREE.SRGBColorSpace;
+    };
+
+    // Only colour maps are sRGB; normal and roughness maps stay linear.
+    prepare(wallMap, true, ROOM_WIDTH_METRES, WALL_HEIGHT_METRES, WALL_TEXTURE_METRES);
+    prepare(wallNormal, false, ROOM_WIDTH_METRES, WALL_HEIGHT_METRES, WALL_TEXTURE_METRES);
+    prepare(wallRough, false, ROOM_WIDTH_METRES, WALL_HEIGHT_METRES, WALL_TEXTURE_METRES);
+
+    prepare(floorMap, true, ROOM_WIDTH_METRES, FLOOR_DEPTH_METRES, FLOOR_TEXTURE_METRES);
+    prepare(floorNormal, false, ROOM_WIDTH_METRES, FLOOR_DEPTH_METRES, FLOOR_TEXTURE_METRES);
+    prepare(floorArm, false, ROOM_WIDTH_METRES, FLOOR_DEPTH_METRES, FLOOR_TEXTURE_METRES);
+  }, [wallMap, wallNormal, wallRough, floorMap, floorNormal, floorArm]);
+
+  return (
+    <group>
+      {/* Floor, running from under the desk back to the wall. */}
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, FLOOR_LEVEL, FLOOR_CENTRE_Z]}
+        receiveShadow
+      >
+        <planeGeometry args={[ROOM_WIDTH, FLOOR_DEPTH]} />
+        <meshStandardMaterial
+          map={floorMap}
+          normalMap={floorNormal}
+          roughnessMap={floorArm}
+          roughness={1}
+          metalness={0}
+        />
+      </mesh>
+
+      {/* The wall itself. */}
+      <mesh position={[0, FLOOR_LEVEL + WALL_HEIGHT / 2, WALL_Z]} receiveShadow>
+        <planeGeometry args={[ROOM_WIDTH, WALL_HEIGHT]} />
+        <meshStandardMaterial
+          map={wallMap}
+          normalMap={wallNormal}
+          roughnessMap={wallRough}
+          roughness={1}
+          metalness={0}
+        />
+      </mesh>
+
+      {/* Skirting along the foot of the wall. */}
+      <RoundedBox
+        args={[ROOM_WIDTH, SKIRTING_HEIGHT, SKIRTING_DEPTH]}
+        radius={0.3}
+        smoothness={3}
+        position={[
+          0,
+          FLOOR_LEVEL + SKIRTING_HEIGHT / 2,
+          WALL_Z + SKIRTING_DEPTH / 2,
+        ]}
+        castShadow
+        receiveShadow
+      >
+        <meshStandardMaterial color="#f4f2ed" roughness={0.4} metalness={0} />
+      </RoundedBox>
+
+      {/* Doorway, off to the left: a known-size object that gives the room scale. */}
+      <group position={[DOOR_X, FLOOR_LEVEL, WALL_Z]}>
+        {[-1, 1].map((side) => (
+          <RoundedBox
+            key={side}
+            args={[DOOR_CASING, DOOR_HEIGHT + DOOR_CASING, DOOR_CASING_DEPTH]}
+            radius={0.4}
+            smoothness={3}
+            position={[
+              (side * (DOOR_WIDTH + DOOR_CASING)) / 2,
+              (DOOR_HEIGHT + DOOR_CASING) / 2,
+              DOOR_CASING_DEPTH / 2,
+            ]}
+            castShadow
+          >
+            <meshStandardMaterial
+              color="#f7f5f1"
+              roughness={0.4}
+              metalness={0}
+            />
+          </RoundedBox>
+        ))}
+
+        <RoundedBox
+          args={[DOOR_WIDTH + DOOR_CASING * 2, DOOR_CASING, DOOR_CASING_DEPTH]}
+          radius={0.4}
+          smoothness={3}
+          position={[0, DOOR_HEIGHT + DOOR_CASING / 2, DOOR_CASING_DEPTH / 2]}
+          castShadow
+        >
+          <meshStandardMaterial color="#f7f5f1" roughness={0.4} metalness={0} />
+        </RoundedBox>
+
+        {/* A glass door: slim steel stiles and rails around a frosted pane. */}
+        <group position={[0, 0, DOOR_CASING_DEPTH * 0.3]}>
+          {[-1, 1].map((side) => (
+            <mesh
+              key={side}
+              position={[
+                (side * (DOOR_WIDTH - DOOR_STILE)) / 2,
+                DOOR_HEIGHT / 2,
+                0,
+              ]}
+              castShadow
+              receiveShadow
+            >
+              <boxGeometry args={[DOOR_STILE, DOOR_HEIGHT, DOOR_THICKNESS]} />
+              <meshStandardMaterial
+                color="#c3c6cb"
+                roughness={0.28}
+                metalness={0.85}
+              />
+            </mesh>
+          ))}
+
+          {[DOOR_RAIL / 2, DOOR_HEIGHT - DOOR_RAIL / 2].map((y) => (
+            <mesh key={y} position={[0, y, 0]} castShadow receiveShadow>
+              <boxGeometry
+                args={[DOOR_WIDTH, DOOR_RAIL, DOOR_THICKNESS * 0.8]}
+              />
+              <meshStandardMaterial
+                color="#c3c6cb"
+                roughness={0.28}
+                metalness={0.85}
+              />
+            </mesh>
+          ))}
+
+          {/* Frosted pane: it reads unmistakably as glass, and being frosted it
+              does not need a real room behind it to look right. */}
+          <mesh position={[0, DOOR_HEIGHT / 2, 0]}>
+            <boxGeometry
+              args={[
+                DOOR_WIDTH - DOOR_STILE * 2,
+                DOOR_HEIGHT - DOOR_RAIL * 2,
+                DOOR_GLASS,
+              ]}
+            />
+            <meshPhysicalMaterial
+              transmission={1}
+              thickness={2}
+              roughness={0.38}
+              ior={1.5}
+              metalness={0}
+              color="#eef2f4"
+            />
+          </mesh>
+
+          {/* Pull handle, bolted through the glass. */}
+          <mesh
+            position={[DOOR_WIDTH / 2 - 6, HANDLE_HEIGHT, DOOR_GLASS / 2 + 3]}
+            castShadow
+          >
+            <cylinderGeometry args={[0.7, 0.7, 22, 16]} />
+            <meshStandardMaterial
+              color="#cbcdd1"
+              roughness={0.22}
+              metalness={0.9}
+            />
+          </mesh>
+
+          {[-8, 8].map((offset) => (
+            <mesh
+              key={offset}
+              position={[
+                DOOR_WIDTH / 2 - 6,
+                HANDLE_HEIGHT + offset,
+                DOOR_GLASS / 2 + 1.5,
+              ]}
+              rotation={[Math.PI / 2, 0, 0]}
+            >
+              <cylinderGeometry args={[0.4, 0.4, 3, 12]} />
+              <meshStandardMaterial
+                color="#cbcdd1"
+                roughness={0.22}
+                metalness={0.9}
+              />
+            </mesh>
+          ))}
+        </group>
+      </group>
+    </group>
+  );
+}
+
+/**
+ * The desk: a real wooden table under the piece.
+ *
+ * The glTF is modelled in metres with its origin on the floor, so it is scaled
+ * by UNITS_PER_METRE and then dropped until its top surface lands exactly on the
+ * ground the stand's feet rest on, centred on the origin.
+ */
+function Desk() {
+  const { scene } = useGLTF(DESK_URL);
+
+  const desk = useMemo(() => {
+    const instance = scene.clone(true);
+    const bounds = new THREE.Box3().setFromObject(instance);
+    const centre = bounds.getCenter(new THREE.Vector3());
+
+    instance.scale.setScalar(UNITS_PER_METRE);
+    instance.position.set(
+      -centre.x * UNITS_PER_METRE,
+      GROUND_Y - bounds.max.y * UNITS_PER_METRE,
+      -centre.z * UNITS_PER_METRE
+    );
+
+    instance.traverse((child) => {
+      child.castShadow = true;
+      child.receiveShadow = true;
+    });
+
+    return instance;
+  }, [scene]);
+
+  return <primitive object={desk} />;
+}
+
+useGLTF.preload(DESK_URL);
 
 function DeskBase() {
   return (

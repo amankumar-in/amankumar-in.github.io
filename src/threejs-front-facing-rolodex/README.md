@@ -34,18 +34,56 @@ image fully front-facing without faking the mechanism with a 2D slider.
 
 The component fills `100svh`.
 
+## The scene
+
+The piece is not floating in a void. It stands on a real desk, in a real
+photographed room, at real scale:
+
+- `public/models/woodentable01/WoodenTable_01_1k.gltf` — a wooden table
+  (180 × 55 × 66 cm) from [Poly Haven](https://polyhaven.com), with
+  base-colour, normal and metallic-roughness maps. **CC0**, no attribution
+  required.
+- `public/hdri/art_studio_1k.hdr` — a photographed studio interior from Poly
+  Haven, **CC0**. It supplies the light and the reflections on the metal.
+- `public/textures/wall/` — `beige_wall_001`, a 3 m painted plaster scan. The
+  office wall is a **real plane** standing 6 m behind the desk, not a background
+  image: a background sits at infinity, so it has no parallax and always reads
+  flat. Colour, normal and roughness maps.
+- `public/textures/floor/` — `concrete_floor_painted`, a 2 m scan, for the
+  floor the desk stands on.
+- A doorway, skirting and floor give the room scale and a vanishing line; the
+  door is 0.9 × 2.05 m and offset left, clear of the piece's silhouette.
+- `@react-three/postprocessing` adds ambient occlusion and a slight vignette;
+  `SoftShadows` widens the shadow penumbra.
+
+**Everything is metric.** A rolodex card is 5 inches — 0.127 m — wide, and the
+model's card is `CARD_WIDTH` units, so:
+
+```ts
+const UNITS_PER_METRE = CARD_WIDTH / 0.127;
+```
+
+One unit is 2.51 cm, which puts the assembled piece at about 24 cm tall and the
+desk at its true size. The desk glTF is modelled in metres with its origin on the
+floor, so `Desk` scales it by `UNITS_PER_METRE` and drops it until its top
+surface sits exactly on `GROUND_Y`.
+
+To use your own desk or room, drop a model into `public/` and point `DESK_URL`
+and `ROOM_HDRI` at it. If you swap the HDRI, keep it under a couple of megabytes:
+a 1k `.hdr` is plenty for reflections and a blurred backdrop.
+
 ## Install dependencies
 
 For a React 19 / current Next.js project:
 
 ```bash
-npm install three @react-three/fiber @react-three/drei
+npm install three @react-three/fiber @react-three/drei @react-three/postprocessing postprocessing
 ```
 
 or:
 
 ```bash
-pnpm add three @react-three/fiber @react-three/drei
+pnpm add three @react-three/fiber @react-three/drei @react-three/postprocessing postprocessing
 ```
 
 ## Copy these two files

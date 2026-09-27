@@ -1,5 +1,9 @@
 Required packages:
 
-npm install three @react-three/fiber @react-three/drei
+npm install three @react-three/fiber @react-three/drei @react-three/postprocessing postprocessing
 
 For React 19, use React Three Fiber v9 (current stable) rather than the v10 alpha.
+
+Scene assets under public/ (all CC0 from polyhaven.com):
+  hdri/art_studio_1k.hdr
+  models/woodentable01/  (WoodenTable_01_1k.gltf + .bin + textures/)
