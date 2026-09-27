@@ -60,12 +60,40 @@ const WHEEL_RADIUS = 3.05;
 const WHEEL_HALF_WIDTH = 3.22;
 const WHEEL_Y = 1.42;
 
+/**
+ * The stand's uprights.  They used to sit on the same x as the rims, so the rims
+ * passed straight through them: a rim's outer edge is WHEEL_HALF_WIDTH + 0.105
+ * and an upright is 0.27 across, so its centre has to be at least 0.24 further
+ * out.  At 0.33 further out there is a clear gap, and the axle — which ends at
+ * 3.575 — still lands inside the upright, so the stand goes on carrying the
+ * wheel rather than just standing beside it.
+ */
+const STAND_X = WHEEL_HALF_WIDTH + 0.33;
+const STAND_FOOT_WIDTH = 0.54;
+const STAND_HALF_WIDTH = STAND_X + STAND_FOOT_WIDTH / 2;
+
+/**
+ * Card size.  These are the original proportions, restored.
+ *
+ * The height is not capped by the axle, and it cannot be.  The card reaches
+ * CARD_HEIGHT - CARD_TOP_EDGE = 3.25 from its hinge while the hinge always sits
+ * 3.05 from the axle, so the card runs 0.20 past the wheel's centre.  Its swept
+ * envelope therefore contains the axle at *every* sway angle — the overlap is on
+ * the swept path, not on the swing path — so no contact response can nudge it
+ * clear; only a jam could, and that would break the free rotation.  The two
+ * honest fixes are a card under 2.84 (reach < WHEEL_RADIUS - 0.14) or a wheel
+ * radius above 3.39, and neither is free: the auto-framing fits the whole
+ * assembly, so a bigger wheel gives back the very size the card gained.
+ */
 const CARD_WIDTH = 5.05;
 const CARD_HEIGHT = 3.18;
 const CARD_DEPTH = 0.09;
 
 /** Radius of the rod each card hangs from. */
 const RAIL_RADIUS = 0.028;
+
+/** Radius of the axle through the middle of the wheel. */
+const AXLE_RADIUS = 0.095;
 
 /**
  * The bearing collar at the heart of each hanger.
@@ -88,6 +116,29 @@ const HANGER_DROP = 0.26;
 const CARD_TOP_EDGE = -HANGER_DROP;
 const CARD_DROP = CARD_HEIGHT / 2 - CARD_TOP_EDGE;
 
+/**
+ * Sway physics.  Everything here is in model units, and one unit is 2.51 cm, so
+ * real gravity is 9.81 / 0.0251 = 390.8 units/s².  A hanging card is a pendulum
+ * about its rod's axis, so its period comes from g and the hinge-to-centre
+ * distance — a 3.6 cm pendulum, which is what a card this size gives, rings at
+ * about 2.6 Hz.  Raising SWAY_LENGTH slows the swing without changing how far it
+ * swings, because the amplitude comes from the acceleration, not the length.
+ */
+const GRAVITY = 9.81 / 0.0251;
+const SWAY_LENGTH = CARD_DROP;
+const SWAY_STIFFNESS = GRAVITY / SWAY_LENGTH;
+const SWAY_DAMPING = 2 * 0.22 * Math.sqrt(SWAY_STIFFNESS);
+/** Hard stop, so nothing can ever swing into the axle. */
+const SWAY_LIMIT = 0.28;
+
+/**
+ * Sway exaggeration.  1 is physically exact, and at the speeds a mouse wheel
+ * actually produces that is a 4.7° swing — real, but too small to read.  3 makes
+ * it about 14°, and a fast spin put the front and back cards on the stop.  The
+ * shape of the motion is untouched: only the driving acceleration is scaled.
+ */
+const SWAY_GAIN = 3;
+
 const AXLE_LENGTH = 7.15;
 
 /**
@@ -96,8 +147,9 @@ const AXLE_LENGTH = 7.15;
  * The hangers orbit the origin at WHEEL_RADIUS and every card hangs CARD_DROP
  * below the rod it is clipped to, so the assembly is no longer symmetric about
  * y = 0: the highest point is the wheel's own ring and the lowest is the bottom
- * card's lower edge.  MODEL_CENTER_Y is the offset applied to the scene group
- * so that framed box ends up centred on the camera axis.
+ * card's lower edge.  The widest is the stand's feet.  MODEL_CENTER_Y is the
+ * offset applied to the scene group so that framed box ends up centred on the
+ * camera axis.
  */
 const MODEL_TOP = Math.max(
   WHEEL_Y + WHEEL_RADIUS + 0.105, // the wheel's rings
@@ -107,7 +159,6 @@ const MODEL_TOP = Math.max(
 const MODEL_BOTTOM = WHEEL_Y - WHEEL_RADIUS + CARD_TOP_EDGE - CARD_HEIGHT;
 const MODEL_CENTER_Y = (MODEL_TOP + MODEL_BOTTOM) / 2;
 const MODEL_HALF_HEIGHT = (MODEL_TOP - MODEL_BOTTOM) / 2;
-const MODEL_HALF_WIDTH = AXLE_LENGTH / 2;
 
 /**
  * Widest parts of the model, each paired with its own z.  The desk feet are
@@ -115,8 +166,8 @@ const MODEL_HALF_WIDTH = AXLE_LENGTH / 2;
  * them more and they are the real horizontal limit on narrow viewports.
  */
 const WIDTH_EXTENTS = [
-  { halfWidth: MODEL_HALF_WIDTH, z: 0 },
-  { halfWidth: WHEEL_HALF_WIDTH + 0.27, z: 0.8 },
+  { halfWidth: AXLE_LENGTH / 2, z: 0 },
+  { halfWidth: STAND_HALF_WIDTH, z: 0.8 },
 ];
 
 /**
@@ -220,22 +271,6 @@ const DOOR_CASING_DEPTH = DOOR_CASING_DEPTH_METRES * UNITS_PER_METRE;
 const DOOR_X = DOOR_OFFSET_METRES * UNITS_PER_METRE;
 const HANDLE_HEIGHT = HANDLE_HEIGHT_METRES * UNITS_PER_METRE;
 
-/** Planters standing on the floor against the wall, to the right of the piece. */
-const PLANTERS: { url: string; x: number; scale: number; turn: number }[] = [
-  {
-    url: "/models/planter_box_01/planter_box_01_1k.gltf",
-    x: 1.2,
-    scale: 0.8,
-    turn: 0.35,
-  },
-  {
-    url: "/models/planter_box_02/planter_box_02_1k.gltf",
-    x: 2.15,
-    scale: 0.8,
-    turn: -0.45,
-  },
-];
-
 /** A small analogue clock, high on the wall, reading the real time. */
 const CLOCK_X = 1.15 * UNITS_PER_METRE;
 const CLOCK_Y = 1.9 * UNITS_PER_METRE;
@@ -259,8 +294,10 @@ export default function ThreeDRolodex({
   openInNewTab = false,
 }: ThreeDRolodexProps) {
   const stageRef = useRef<HTMLDivElement>(null);
+  // Frames are rendered on demand, so anything that changes the scene has to ask
+  // for one.  The canvas hands us its invalidate() once it has been created.
+  const invalidateRef = useRef<(() => void) | null>(null);
   const targetRotationRef = useRef(0);
-  const snapTimerRef = useRef<number | null>(null);
   const suppressCardClickRef = useRef(false);
 
   const dragRef = useRef<{
@@ -289,24 +326,6 @@ export default function ThreeDRolodex({
     [count, step]
   );
 
-  const snapToNearest = useCallback(() => {
-    if (!count) return;
-    const snapped =
-      Math.round(targetRotationRef.current / step) * step;
-    targetRotationRef.current = snapped;
-    syncActiveIndex(snapped);
-  }, [count, step, syncActiveIndex]);
-
-  const scheduleSnap = useCallback(() => {
-    if (snapTimerRef.current !== null) {
-      window.clearTimeout(snapTimerRef.current);
-    }
-
-    snapTimerRef.current = window.setTimeout(() => {
-      snapToNearest();
-    }, 130);
-  }, [snapToNearest]);
-
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage || !count) return;
@@ -327,10 +346,11 @@ export default function ThreeDRolodex({
         step * 0.72
       );
 
-      // Scroll down => next project rotates to the front.
+      // Scroll down => next project rotates to the front.  The wheel is left
+      // exactly where it is put: a real one does not drift to the nearest card.
       targetRotationRef.current -= delta;
       syncActiveIndex(targetRotationRef.current);
-      scheduleSnap();
+      invalidateRef.current?.();
     };
 
     stage.addEventListener("wheel", onWheel, { passive: false });
@@ -338,15 +358,7 @@ export default function ThreeDRolodex({
     return () => {
       stage.removeEventListener("wheel", onWheel);
     };
-  }, [count, scheduleSnap, step, syncActiveIndex]);
-
-  useEffect(() => {
-    return () => {
-      if (snapTimerRef.current !== null) {
-        window.clearTimeout(snapTimerRef.current);
-      }
-    };
-  }, []);
+  }, [count, step, syncActiveIndex]);
 
   // The project list is an external input: when it changes, every piece of
   // local state (wheel rotation, selection, drawer) has to reset together.
@@ -394,6 +406,7 @@ export default function ThreeDRolodex({
 
     targetRotationRef.current = rotation;
     syncActiveIndex(rotation);
+    invalidateRef.current?.();
   };
 
   const finishPointer = (
@@ -404,8 +417,6 @@ export default function ThreeDRolodex({
 
     suppressCardClickRef.current = drag.moved;
     dragRef.current = null;
-
-    snapToNearest();
   };
 
   const bringCardToFront = useCallback(
@@ -417,6 +428,7 @@ export default function ThreeDRolodex({
         baseTarget,
         targetRotationRef.current
       );
+      invalidateRef.current?.();
       setActiveIndex(index);
     },
     [count, step]
@@ -461,9 +473,16 @@ export default function ThreeDRolodex({
         onPointerCancel={finishPointer}
       >
         <div className={styles.canvasWrap}>
+          {/* Render on demand.  A still scene should cost nothing, so frames are
+              produced only when something actually changes: the wheel settling,
+              a drag, the clock's next second, or a resize. */}
           <Canvas
             shadows
-            dpr={[1, 1.75]}
+            frameloop="demand"
+            dpr={[1, 1.5]}
+            onCreated={(state) => {
+              invalidateRef.current = state.invalidate;
+            }}
             camera={{
               position: [0, 0, 12.2],
               fov: 34,
@@ -562,7 +581,15 @@ function RolodexScene({
   const mechanismRef = useRef<THREE.Group>(null);
   const cardsRef = useRef<THREE.Group>(null);
   const actualRotationRef = useRef(0);
-  const { camera, size } = useThree();
+  const swayRef = useRef<number[]>([]);
+  const swayVelocityRef = useRef<number[]>([]);
+  const previousRotationRef = useRef(0);
+  const previousVelocityRef = useRef(0);
+  // Selectors rather than the whole store: a bare useThree() re-renders this
+  // component on every store change, including each pointer move.
+  const camera = useThree((state) => state.camera);
+  const size = useThree((state) => state.size);
+  const invalidate = useThree((state) => state.invalidate);
 
   // Frame the whole assembly: scale it so its full height and width fit inside
   // the viewport, and let the scene group's offset put its centre on the camera
@@ -601,6 +628,15 @@ function RolodexScene({
       10.5,
       delta
     );
+    const previousRotation = previousRotationRef.current;
+    const angularVelocity =
+      delta > 0 ? (rotation - previousRotation) / delta : 0;
+    const angularAcceleration =
+      delta > 0
+        ? (angularVelocity - previousVelocityRef.current) / delta
+        : 0;
+    previousRotationRef.current = rotation;
+    previousVelocityRef.current = angularVelocity;
     actualRotationRef.current = rotation;
 
     // The wheel and the cards are driven from this one number, in one pass.
@@ -614,11 +650,70 @@ function RolodexScene({
       mechanismRef.current.rotation.x = -rotation;
     }
 
+    // Sway.  Each card is a pendulum hanging from its own rod, and what swings it
+    // is the acceleration of its hinge along z — the direction through the
+    // screen.  That acceleration has two parts, and which card feels which is the
+    // whole story:
+    //
+    //   tangential     -WHEEL_RADIUS * sin(theta) * alpha    top and bottom
+    //   centripetal    -WHEEL_RADIUS * cos(theta) * omega^2   front and back
+    //
+    // So a wheel notch — a sharp alpha at low omega — kicks the top and bottom
+    // cards into a visible ring, while a fast spin keeps a lean on the front and
+    // back cards that grows with the square of the speed.  That is what a card on
+    // a hinge actually does, and it is why driving this from velocity alone
+    // (as it was) only ever moved one card.
+    //
+    // Every card integrates its own pendulum, so they ring out of phase with one
+    // another instead of moving as a single object.
     const cards = cardsRef.current;
     if (cards) {
-      for (const card of cards.children) {
-        card.rotation.x = rotation;
+      const cardCount = cards.children.length;
+      if (swayRef.current.length !== cardCount) {
+        swayRef.current = new Array<number>(cardCount).fill(0);
+        swayVelocityRef.current = new Array<number>(cardCount).fill(0);
       }
+
+      cards.children.forEach((card, index) => {
+        const theta = index * step + rotation;
+        const hingeAccelerationZ =
+          -WHEEL_RADIUS *
+          (Math.cos(theta) * angularVelocity * angularVelocity +
+            Math.sin(theta) * angularAcceleration);
+        const equilibrium = THREE.MathUtils.clamp(
+          (hingeAccelerationZ / GRAVITY) * SWAY_GAIN,
+          -0.5,
+          0.5
+        );
+
+        const restoring =
+          (equilibrium - swayRef.current[index]) * SWAY_STIFFNESS -
+          swayVelocityRef.current[index] * SWAY_DAMPING;
+        swayVelocityRef.current[index] += restoring * delta;
+        swayRef.current[index] = THREE.MathUtils.clamp(
+          swayRef.current[index] + swayVelocityRef.current[index] * delta,
+          -SWAY_LIMIT,
+          SWAY_LIMIT
+        );
+
+        card.rotation.x = rotation + swayRef.current[index];
+      });
+    }
+
+    // Keep frames coming while the wheel is settling or any card is still
+    // swinging, then let the loop go quiet.  This is what makes an idle scene
+    // cost nothing.
+    const swayPeak = Math.max(0, ...swayRef.current.map(Math.abs));
+    const swayVelocityPeak = Math.max(
+      0,
+      ...swayVelocityRef.current.map(Math.abs)
+    );
+    if (
+      Math.abs(rotation - targetRotationRef.current) > 0.0005 ||
+      swayPeak > 0.0005 ||
+      swayVelocityPeak > 0.0005
+    ) {
+      invalidate();
     }
   });
 
@@ -634,7 +729,7 @@ function RolodexScene({
 
       {/* Widens the shadow penumbra so the cast shadow reads as diffuse daylight
           rather than a hard-edged stencil. */}
-      <SoftShadows size={26} samples={16} focus={0.6} />
+      <SoftShadows size={20} samples={8} focus={0.6} />
 
       {/* The HDRI carries the fill and the reflections; one key light adds a
           definite shadow across the desk. */}
@@ -644,8 +739,8 @@ function RolodexScene({
         intensity={1.15}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-camera-near={0.1}
         shadow-camera-far={40}
         shadow-camera-left={-8}
@@ -660,8 +755,6 @@ function RolodexScene({
         scale={fitScale}
       >
         <Room />
-
-        <Planters />
 
         <Clock fitScale={fitScale} />
 
@@ -731,7 +824,7 @@ const Mechanism = forwardRef<
     <group ref={forwardedRef} position={[0, WHEEL_Y, 0]}>
       {/* Main axle */}
       <mesh castShadow receiveShadow rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.095, 0.095, AXLE_LENGTH, 32]} />
+        <cylinderGeometry args={[AXLE_RADIUS, AXLE_RADIUS, AXLE_LENGTH, 32]} />
         <meshStandardMaterial
           color="#d6d8dc"
           roughness={0.25}
@@ -1006,7 +1099,9 @@ function ProjectCard3D({
  * lacks.
  */
 function Clock({ fitScale }: { fitScale: number }) {
-  const { camera, size } = useThree();
+  const camera = useThree((state) => state.camera);
+  const size = useThree((state) => state.size);
+  const invalidate = useThree((state) => state.invalidate);
   const hourRef = useRef<THREE.Group>(null);
   const minuteRef = useRef<THREE.Group>(null);
   const secondRef = useRef<THREE.Group>(null);
@@ -1027,6 +1122,14 @@ function Clock({ fitScale }: { fitScale: number }) {
       secondRef.current.rotation.z = -(seconds / 60) * TAU;
     }
   });
+
+  // On-demand rendering means the clock asks for its own frames: one per second.
+  // A tick rather than a sweep is also what a real analogue clock does, so the
+  // hands stepping is correct rather than a compromise.
+  useEffect(() => {
+    const id = window.setInterval(() => invalidate(), 1000);
+    return () => window.clearInterval(id);
+  }, [invalidate]);
 
   const marks = useMemo(
     () => Array.from({ length: 12 }, (_, index) => (index / 12) * TAU),
@@ -1149,52 +1252,6 @@ function Clock({ fitScale }: { fitScale: number }) {
     </group>
   );
 }
-
-/** One planter box, standing on the floor against the wall. */
-function Planter({
-  url,
-  x,
-  scale,
-  turn,
-}: {
-  url: string;
-  x: number;
-  scale: number;
-  turn: number;
-}) {
-  const { scene } = useGLTF(url);
-
-  const placed = useMemo(() => {
-    const instance = scene.clone(true);
-    instance.scale.setScalar(UNITS_PER_METRE * scale);
-    instance.position.set(x * UNITS_PER_METRE, 0, 0);
-    instance.rotation.y = turn;
-    instance.traverse((child) => {
-      child.castShadow = true;
-      child.receiveShadow = true;
-    });
-    return instance;
-  }, [scene, x, scale, turn]);
-
-  return <primitive object={placed} />;
-}
-
-/**
- * The planters, lined up on the floor against the wall.  They break the wall's
- * flatness and give the room some life at the point where it meets the floor.
- */
-function Planters() {
-  return (
-    <group position={[0, FLOOR_LEVEL, WALL_Z + 0.28 * UNITS_PER_METRE]}>
-      {PLANTERS.map((planter) => (
-        <Planter key={planter.url} {...planter} />
-      ))}
-    </group>
-  );
-}
-
-useGLTF.preload(PLANTERS[0].url);
-useGLTF.preload(PLANTERS[1].url);
 
 /**
  * The office around the desk: floor, wall, skirting and a doorway.
@@ -1454,10 +1511,10 @@ function DeskBase() {
   return (
     <group position={[0, DESK_Y, -0.3]}>
       {/* Feet */}
-      {[-WHEEL_HALF_WIDTH, WHEEL_HALF_WIDTH].map((x) => (
+      {[-STAND_X, STAND_X].map((x) => (
         <RoundedBox
           key={x}
-          args={[0.54, DESK_FOOT_HEIGHT, 2.2]}
+          args={[STAND_FOOT_WIDTH, DESK_FOOT_HEIGHT, 2.2]}
           radius={0.13}
           smoothness={4}
           position={[x, 0, 0]}
@@ -1474,7 +1531,7 @@ function DeskBase() {
 
       {/* Cross brace */}
       <RoundedBox
-        args={[WHEEL_HALF_WIDTH * 2 + 0.52, 0.19, 0.5]}
+        args={[STAND_HALF_WIDTH * 2, 0.19, 0.5]}
         radius={0.08}
         smoothness={4}
         position={[0, 0.02, -0.66]}
@@ -1488,8 +1545,8 @@ function DeskBase() {
         />
       </RoundedBox>
 
-      {/* Uprights to the wheel hub */}
-      {[-WHEEL_HALF_WIDTH, WHEEL_HALF_WIDTH].map((x) => (
+      {/* Uprights, outboard of the rims, carrying the axle */}
+      {[-STAND_X, STAND_X].map((x) => (
         <RoundedBox
           key={`upright-${x}`}
           args={[0.27, DESK_UPRIGHT_HEIGHT, 0.34]}

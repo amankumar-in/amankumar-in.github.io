@@ -44,6 +44,16 @@ const projects: RolodexProject[] = [
       "A photo-led archive with a restrained interface and tactile navigation.",
     tags: ["Photography", "Archive"],
   },
+  {
+    id: "signal",
+    title: "Signal",
+    eyebrow: "Interface",
+    image: "/projects/signal.svg",
+    href: "/projects/signal",
+    description:
+      "A compact dashboard language for dense information, without the usual enterprise clutter.",
+    tags: ["Interface", "Data"],
+  },
 ];
 
 export default function App() {

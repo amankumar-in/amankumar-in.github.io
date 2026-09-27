@@ -12,21 +12,27 @@ The WebGL scene contains:
 - visible spokes
 - one rotating metal mounting rail per project card
 - desk feet / support frame
-- thick project cards with image surfaces and metal clips
+- thick project cards with image surfaces, and a hinged hanger on each side
 
 The wheel assembly genuinely rotates around the X axis.
 
 The cards **do not inherit the wheel rotation**. Each card's position follows
-its physical rail around the wheel, while the card's rotation remains `[0, 0, 0]`.
-The wheel group uses the inverse X rotation so the rail and the independent card
-remain spatially aligned throughout the turn. That is what keeps every project
-image fully front-facing without faking the mechanism with a 2D slider.
+its physical rail around the wheel, then applies the equal and opposite X
+rotation about its own rail axis so its face stays toward the viewer. Because the
+cards live inside the rotating wheel, one and the same matrix carries card, rod
+and hinge, so they cannot drift apart or lag by a frame.
+
+On top of that they **sway**. A hanging card is not welded to its rod: when the
+wheel moves it lags, swinging a few degrees about the rod's own axis — the only
+motion that preserves its facing. The swing is scaled by each card's position, so
+it is strongest at the top and bottom of the wheel where a hinge travels fastest
+through the screen plane, and it dies away once the wheel stops.
 
 ## Interaction
 
 - Mouse wheel / trackpad: vertical movement rotates the wheel.
 - Touch: vertical swipe rotates it.
-- Input snaps to the nearest project.
+- The wheel is left exactly where it is put: it never snaps or self-aligns.
 - Clicking a non-front card rotates it to the front.
 - Clicking the front card selects it.
 - Desktop: project information appears in the right-hand column.
@@ -63,7 +69,7 @@ model's card is `CARD_WIDTH` units, so:
 const UNITS_PER_METRE = CARD_WIDTH / 0.127;
 ```
 
-One unit is 2.51 cm, which puts the assembled piece at about 24 cm tall and the
+One unit is 2.51 cm, which puts the assembled piece at about 23 cm tall and the
 desk at its true size. The desk glTF is modelled in metres with its origin on the
 floor, so `Desk` scales it by `UNITS_PER_METRE` and drops it until its top
 surface sits exactly on `GROUND_Y`.
@@ -136,14 +142,20 @@ const WHEEL_RADIUS = 3.05;
 const WHEEL_HALF_WIDTH = 3.22;
 const WHEEL_Y = 1.42;
 
-const CARD_WIDTH = 5.05;
-const CARD_HEIGHT = 3.18;
+const STAND_X = WHEEL_HALF_WIDTH + 0.33; // uprights, clear of the rims
+const CARD_WIDTH = 4.55;
+const CARD_HEIGHT = 2.86;
 ```
 
 - Increase `WHEEL_RADIUS` for a larger circular mechanism.
 - Increase `WHEEL_HALF_WIDTH` to expose more frame outside the cards.
 - `WHEEL_Y` is the gimbal/pivot height on each upright card.
-- Change the card dimensions if your images use a different aspect ratio.
+- Change the card dimensions if your images use a different aspect ratio, but keep
+  `CARD_HEIGHT` below `WHEEL_RADIUS + CARD_TOP_EDGE − 0.095` — 2.905 at these
+  values. The card at the top of the wheel hangs down past the hub, and anything
+  taller reaches through the axle.
+- `STAND_X` must stay at least `WHEEL_HALF_WIDTH + 0.105 + 0.135` out, or the rims
+  pass through the uprights.
 
 ## Feel of the interaction
 
