@@ -49,7 +49,7 @@ const projects: RolodexProject[] = [
 export default function App() {
   return (
     <main style={{ height: "100svh", overflow: "hidden" }}>
-      <ThreeDRolodex projects={projects} heading="Selected work" />
+      <ThreeDRolodex projects={projects} />
     </main>
   );
 }

@@ -5,7 +5,9 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import {
   ContactShadows,
+  Environment,
   Image as DreiImage,
+  Lightformer,
   RoundedBox,
 } from "@react-three/drei";
 import {
@@ -21,6 +23,7 @@ import type {
   ForwardedRef,
   MutableRefObject,
   PointerEvent as ReactPointerEvent,
+  ReactNode,
 } from "react";
 import styles from "./ThreeDRolodex.module.css";
 
@@ -36,7 +39,6 @@ export type RolodexProject = {
 
 type ThreeDRolodexProps = {
   projects: RolodexProject[];
-  heading?: string;
   className?: string;
   openInNewTab?: boolean;
 };
@@ -56,6 +58,90 @@ const CARD_WIDTH = 5.05;
 const CARD_HEIGHT = 3.18;
 const CARD_DEPTH = 0.09;
 
+/** Radius of the rod each card hangs from. */
+const RAIL_RADIUS = 0.028;
+
+/**
+ * The bearing collar at the heart of each hanger.
+ *
+ * Its axis is the rod's axis, so it goes *around* the rod rather than through
+ * it: the bore is wider than the rod, the collar is centred on the same z, and
+ * the two surfaces never touch, so nothing can depth-fight.
+ */
+const HINGE_HOLE_RADIUS = RAIL_RADIUS + 0.006;
+const HINGE_TUBE = 0.032;
+const HINGE_RADIUS = HINGE_HOLE_RADIUS + HINGE_TUBE;
+const HINGE_OUTER_RADIUS = HINGE_RADIUS + HINGE_TUBE;
+
+/**
+ * How far the card's top edge sits below the rod's axis — and therefore how much
+ * height the hanger's neck and plate have to work in.  The card hangs clear of
+ * the rod: the rod passes over the top edge, never through the card.
+ */
+const HANGER_DROP = 0.26;
+const CARD_TOP_EDGE = -HANGER_DROP;
+const CARD_DROP = CARD_HEIGHT / 2 - CARD_TOP_EDGE;
+
+const AXLE_LENGTH = 7.15;
+
+/**
+ * Extent of the assembled model, measured from the scene origin.
+ *
+ * The hangers orbit the origin at WHEEL_RADIUS and every card hangs CARD_DROP
+ * below the rod it is clipped to, so the assembly is no longer symmetric about
+ * y = 0: the highest point is the wheel's own ring and the lowest is the bottom
+ * card's lower edge.  MODEL_CENTER_Y is the offset applied to the scene group
+ * so that framed box ends up centred on the camera axis.
+ */
+const MODEL_TOP = Math.max(
+  WHEEL_Y + WHEEL_RADIUS + 0.105, // the wheel's rings
+  WHEEL_Y + WHEEL_RADIUS + HINGE_OUTER_RADIUS, // collar at the top of the orbit
+  WHEEL_Y + WHEEL_RADIUS + CARD_TOP_EDGE // top card's top edge
+);
+const MODEL_BOTTOM = WHEEL_Y - WHEEL_RADIUS + CARD_TOP_EDGE - CARD_HEIGHT;
+const MODEL_CENTER_Y = (MODEL_TOP + MODEL_BOTTOM) / 2;
+const MODEL_HALF_HEIGHT = (MODEL_TOP - MODEL_BOTTOM) / 2;
+const MODEL_HALF_WIDTH = AXLE_LENGTH / 2;
+
+/**
+ * Widest parts of the model, each paired with its own z.  The desk feet are
+ * narrower than the axle but sit nearer the camera, so perspective magnifies
+ * them more and they are the real horizontal limit on narrow viewports.
+ */
+const WIDTH_EXTENTS = [
+  { halfWidth: MODEL_HALF_WIDTH, z: 0 },
+  { halfWidth: WHEEL_HALF_WIDTH + 0.27, z: 0.8 },
+];
+
+/**
+ * The floor sits at the lowest point of the whole assembly, so no card can sink
+ * through it.  The stand therefore has to reach that floor: its feet rest on it
+ * and its uprights run up to just under the axle.
+ */
+const GROUND_Y = MODEL_BOTTOM;
+const DESK_FOOT_HEIGHT = 0.42;
+const DESK_Y = GROUND_Y + DESK_FOOT_HEIGHT / 2;
+const DESK_UPRIGHT_HEIGHT = WHEEL_Y - DESK_Y - 0.04;
+
+/**
+ * The room the assembly stands in: a veneer desk top under it and a wall behind.
+ *
+ * These are model units and live inside the same scaled group as the model, so
+ * the setting stays proportional to it at every viewport size.  The desk's top
+ * face is the ground the stand's feet rest on.
+ */
+const DESK_TOP = GROUND_Y;
+const DESK_WIDTH = 26;
+const DESK_DEPTH = 22;
+const DESK_BACK_Z = -9;
+const DESK_THICKNESS = 1.6;
+const WALL_Z = -8;
+const WALL_HEIGHT = 30;
+const WALL_HALF_WIDTH = 15;
+
+/** Share of the viewport the model is allowed to fill. */
+const FRAMING_MARGIN = 0.9;
+
 const TAU = Math.PI * 2;
 
 const wrap = (value: number, length: number) =>
@@ -67,7 +153,6 @@ function nearestEquivalentAngle(angle: number, current: number) {
 
 export default function ThreeDRolodex({
   projects,
-  heading = "Selected projects",
   className = "",
   openInNewTab = false,
 }: ThreeDRolodexProps) {
@@ -273,17 +358,12 @@ export default function ThreeDRolodex({
         onPointerUp={finishPointer}
         onPointerCancel={finishPointer}
       >
-        <header className={styles.stageHeader}>
-          <p>Portfolio / archive</p>
-          <h1>{heading}</h1>
-        </header>
-
         <div className={styles.canvasWrap}>
           <Canvas
             shadows
             dpr={[1, 1.75]}
             camera={{
-              position: [0, 0.15, 12.2],
+              position: [0, 0, 12.2],
               fov: 34,
               near: 0.1,
               far: 50,
@@ -298,39 +378,11 @@ export default function ThreeDRolodex({
               <RolodexScene
                 projects={projects}
                 targetRotationRef={targetRotationRef}
-                activeIndex={activeIndex}
                 suppressCardClickRef={suppressCardClickRef}
                 onCardClick={handleCardClick}
               />
             </Suspense>
           </Canvas>
-        </div>
-
-        <div className={styles.projectHud}>
-          <div>
-            <span className={styles.counter}>
-              {String(activeIndex + 1).padStart(2, "0")} /{" "}
-              {String(count).padStart(2, "0")}
-            </span>
-            <strong>{activeProject?.title}</strong>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedIndex(activeIndex);
-              setDrawerOpen(true);
-            }}
-          >
-            View project
-          </button>
-        </div>
-
-        <div className={styles.scrollHint} aria-hidden="true">
-          <span className={styles.mouseIcon}>
-            <i />
-          </span>
-          <span>Scroll or swipe vertically</span>
         </div>
       </div>
 
@@ -384,59 +436,100 @@ export default function ThreeDRolodex({
 function RolodexScene({
   projects,
   targetRotationRef,
-  activeIndex,
   suppressCardClickRef,
   onCardClick,
 }: {
   projects: RolodexProject[];
   targetRotationRef: MutableRefObject<number>;
-  activeIndex: number;
   suppressCardClickRef: MutableRefObject<boolean>;
   onCardClick: (index: number) => void;
 }) {
   const mechanismRef = useRef<THREE.Group>(null);
+  const cardsRef = useRef<THREE.Group>(null);
   const actualRotationRef = useRef(0);
-  const { viewport } = useThree();
+  const { camera, size } = useThree();
 
-  const responsiveScale = Math.min(
-    1,
-    Math.max(0.62, viewport.width / 7.4)
+  // Frame the whole assembly: scale it so its full height and width fit inside
+  // the viewport, and let the scene group's offset put its centre on the camera
+  // axis.  Each axis is a ratio of the visible half-size to the model's
+  // half-size — with one correction: geometry nearer the camera is magnified,
+  // so the widest parts are measured at their own depth instead of at z = 0.
+  const halfFov =
+    THREE.MathUtils.degToRad((camera as THREE.PerspectiveCamera).fov) / 2;
+  const aspect = size.width / Math.max(1, size.height);
+  const cameraDistance = Math.abs(camera.position.z);
+  const halfViewHeight = Math.tan(halfFov) * cameraDistance;
+  const halfViewWidth = halfViewHeight * aspect;
+
+  // The top and bottom cards are the vertical extremes, and they sit at z = 0
+  // when they reach the highest and lowest points of the wheel.
+  const scaleToFitHeight =
+    (FRAMING_MARGIN * halfViewHeight) / MODEL_HALF_HEIGHT;
+  const scaleToFitWidth = Math.min(
+    ...WIDTH_EXTENTS.map(
+      ({ halfWidth, z }) =>
+        (FRAMING_MARGIN * halfViewWidth) /
+        (halfWidth + (FRAMING_MARGIN * halfViewWidth * z) / cameraDistance)
+    )
   );
+  const fitScale = Math.min(scaleToFitHeight, scaleToFitWidth);
+
+  // World-space height of the floor the whole assembly stands on.
+  const floorY = (GROUND_Y - MODEL_CENTER_Y) * fitScale;
 
   const step = TAU / projects.length;
 
   useFrame((_, delta) => {
-    actualRotationRef.current = THREE.MathUtils.damp(
+    const rotation = THREE.MathUtils.damp(
       actualRotationRef.current,
       targetRotationRef.current,
       10.5,
       delta
     );
+    actualRotationRef.current = rotation;
 
+    // The wheel and the cards are driven from this one number, in one pass.
+    //
+    // The cards live inside the rotating wheel, so the wheel's rotation is what
+    // carries each card around its rail — the very same matrix that carries the
+    // rod, which is why the eyelet and the rod can never drift apart or lag by a
+    // frame.  Each card then applies the equal and opposite rotation about its
+    // own rail axis to cancel the tumble and stay front-facing.
     if (mechanismRef.current) {
-      mechanismRef.current.rotation.x =
-        -actualRotationRef.current;
+      mechanismRef.current.rotation.x = -rotation;
+    }
+
+    const cards = cardsRef.current;
+    if (cards) {
+      for (const card of cards.children) {
+        card.rotation.x = rotation;
+      }
     }
   });
 
   return (
     <>
-      <color attach="background" args={["#e9e5dc"]} />
+      <color attach="background" args={["#f4f1ec"]} />
 
-      <ambientLight intensity={1.35} />
+      {/* A soft studio rig.  The Environment below does most of the work through
+          reflections and fill; the direct lights add shape, and the key light
+          carries the cast shadow. */}
+      <ambientLight intensity={0.45} />
       <hemisphereLight
-        intensity={0.85}
-        color="#fff8e8"
-        groundColor="#817a6b"
+        intensity={0.35}
+        color="#ffffff"
+        groundColor="#d8d8d8"
       />
       <directionalLight
         castShadow
         position={[5, 8, 10]}
-        intensity={2.25}
+        intensity={1.9}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.02}
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-near={0.1}
-        shadow-camera-far={30}
+        shadow-camera-far={40}
         shadow-camera-left={-8}
         shadow-camera-right={8}
         shadow-camera-top={8}
@@ -444,36 +537,73 @@ function RolodexScene({
       />
       <pointLight
         position={[-6, -1, 6]}
-        intensity={0.55}
-        color="#cfd8ff"
+        intensity={0.3}
+        color="#f2f5ff"
       />
 
-      <group scale={responsiveScale}>
-        <Mechanism
-          ref={mechanismRef}
-          cardCount={projects.length}
+      {/* White studio boxes, rendered into a cube map so the metal has something
+          to reflect without loading an external HDRI. */}
+      <Environment resolution={256}>
+        <Lightformer
+          form="rect"
+          intensity={3}
+          position={[0, 6, -9]}
+          rotation-x={Math.PI / 4}
+          scale={[12, 12, 1]}
         />
+        <Lightformer
+          form="rect"
+          intensity={2}
+          position={[-6, 2, 1]}
+          rotation-y={Math.PI / 2}
+          scale={[16, 6, 1]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={2}
+          position={[6, 2, 1]}
+          rotation-y={-Math.PI / 2}
+          scale={[16, 6, 1]}
+        />
+        <Lightformer
+          form="ring"
+          intensity={2.5}
+          position={[0, 8, 2]}
+          scale={3}
+        />
+      </Environment>
 
-        {projects.map((project, index) => (
-          <ProjectCard3D
-            key={project.id}
-            project={project}
-            index={index}
-            step={step}
-            active={index === activeIndex}
-            rotationRef={actualRotationRef}
-            suppressCardClickRef={suppressCardClickRef}
-            onClick={() => onCardClick(index)}
-          />
-        ))}
+      {/* The room itself lives inside the scaled group, next to the model. */}
+      <group
+        position={[0, -MODEL_CENTER_Y * fitScale, 0]}
+        scale={fitScale}
+      >
+        <Room />
+
+        <Mechanism ref={mechanismRef} cardCount={projects.length}>
+          {/* Cards ride inside the wheel, so the shared rotation above carries
+              them around their rails together with the rods. */}
+          <group ref={cardsRef}>
+            {projects.map((project, index) => (
+              <ProjectCard3D
+                key={project.id}
+                project={project}
+                index={index}
+                step={step}
+                suppressCardClickRef={suppressCardClickRef}
+                onClick={() => onCardClick(index)}
+              />
+            ))}
+          </group>
+        </Mechanism>
 
         <DeskBase />
       </group>
 
       <ContactShadows
-        position={[0, -3.95 * responsiveScale, 0]}
+        position={[0, floorY + 0.012, 0]}
         opacity={0.3}
-        scale={13}
+        scale={13 * fitScale}
         blur={2.8}
         far={8}
       />
@@ -481,9 +611,13 @@ function RolodexScene({
   );
 }
 
-const Mechanism = forwardRef<THREE.Group, { cardCount: number }>(function MechanismInner(
+const Mechanism = forwardRef<
+  THREE.Group,
+  { cardCount: number; children?: ReactNode }
+>(function MechanismInner(
   {
     cardCount,
+    children,
   },
   forwardedRef: ForwardedRef<THREE.Group>
 ) {
@@ -510,11 +644,11 @@ const Mechanism = forwardRef<THREE.Group, { cardCount: number }>(function Mechan
     <group ref={forwardedRef} position={[0, WHEEL_Y, 0]}>
       {/* Main axle */}
       <mesh castShadow receiveShadow rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.095, 0.095, 7.15, 32]} />
+        <cylinderGeometry args={[0.095, 0.095, AXLE_LENGTH, 32]} />
         <meshStandardMaterial
-          color="#6f706d"
-          roughness={0.27}
-          metalness={0.78}
+          color="#d6d8dc"
+          roughness={0.25}
+          metalness={0.85}
         />
       </mesh>
 
@@ -530,7 +664,7 @@ const Mechanism = forwardRef<THREE.Group, { cardCount: number }>(function Mechan
               args={[WHEEL_RADIUS, 0.105, 16, 112]}
             />
             <meshStandardMaterial
-              color="#777872"
+              color="#e0e2e6"
               roughness={0.3}
               metalness={0.74}
             />
@@ -544,7 +678,7 @@ const Mechanism = forwardRef<THREE.Group, { cardCount: number }>(function Mechan
           >
             <cylinderGeometry args={[0.29, 0.29, 0.3, 40]} />
             <meshStandardMaterial
-              color="#5f605c"
+              color="#cfd1d6"
               roughness={0.24}
               metalness={0.82}
             />
@@ -571,9 +705,9 @@ const Mechanism = forwardRef<THREE.Group, { cardCount: number }>(function Mechan
                 args={[0.055, WHEEL_RADIUS, 0.055]}
               />
               <meshStandardMaterial
-                color="#8a8a84"
-                roughness={0.36}
-                metalness={0.68}
+                color="#e6e8ec"
+                roughness={0.28}
+                metalness={0.8}
               />
             </mesh>
           ))}
@@ -595,70 +729,113 @@ const Mechanism = forwardRef<THREE.Group, { cardCount: number }>(function Mechan
         >
           <cylinderGeometry
             args={[
-              0.045,
-              0.045,
+              RAIL_RADIUS,
+              RAIL_RADIUS,
               WHEEL_HALF_WIDTH * 2 + 0.16,
               18,
             ]}
           />
           <meshStandardMaterial
-            color="#94948e"
-            roughness={0.32}
-            metalness={0.72}
+            color="#e8eaee"
+            roughness={0.26}
+            metalness={0.82}
           />
         </mesh>
       ))}
+
+      {children}
     </group>
   );
 });
+
+/**
+ * One card hanger, drawn at its own origin — the rod's axis.
+ *
+ * A bearing collar rides the rod, a neck drops from it, and a riveted plate
+ * straddles the card's top edge.  Each joint overlaps its neighbour rather than
+ * sitting flush, and every face that meets the card is offset from the card's
+ * own faces, so no two surfaces are ever coplanar and nothing touches the rod.
+ */
+function Hanger() {
+  const plateThickness = CARD_DEPTH + 0.045;
+
+  return (
+    <>
+      {/* Bearing collar, riding the rod */}
+      <mesh rotation={[0, Math.PI / 2, 0]} castShadow>
+        <torusGeometry args={[HINGE_RADIUS, HINGE_TUBE, 20, 36]} />
+        <meshStandardMaterial
+          color="#eceef2"
+          roughness={0.2}
+          metalness={0.88}
+        />
+      </mesh>
+
+      {/* Neck.  Its top stops short of the collar's bore, so it can never reach
+          the rod. */}
+      <RoundedBox
+        args={[0.2, 0.14, 0.1]}
+        radius={0.03}
+        smoothness={4}
+        position={[0, -0.12, 0]}
+        castShadow
+      >
+        <meshStandardMaterial
+          color="#e8eaee"
+          roughness={0.3}
+          metalness={0.75}
+        />
+      </RoundedBox>
+
+      {/* Plate, riveted over the card's top edge.  It is thicker than the card,
+          so it stands proud of both faces instead of sharing their planes. */}
+      <RoundedBox
+        args={[0.44, 0.26, plateThickness]}
+        radius={0.05}
+        smoothness={4}
+        position={[0, -0.26, 0]}
+        castShadow
+      >
+        <meshStandardMaterial
+          color="#e8eaee"
+          roughness={0.3}
+          metalness={0.75}
+        />
+      </RoundedBox>
+
+      {/* Rivet heads, set into the plate so they share no plane with it. */}
+      {[1, -1].map((side) => (
+        <mesh
+          key={side}
+          position={[0, -0.31, (side * plateThickness) / 2]}
+          rotation={[Math.PI / 2, 0, 0]}
+          castShadow
+        >
+          <cylinderGeometry args={[0.036, 0.036, 0.04, 14]} />
+          <meshStandardMaterial
+            color="#f4f6f8"
+            roughness={0.24}
+            metalness={0.85}
+          />
+        </mesh>
+      ))}
+    </>
+  );
+}
 
 function ProjectCard3D({
   project,
   index,
   step,
-  active,
-  rotationRef,
   suppressCardClickRef,
   onClick,
 }: {
   project: RolodexProject;
   index: number;
   step: number;
-  active: boolean;
-  rotationRef: MutableRefObject<number>;
   suppressCardClickRef: MutableRefObject<boolean>;
   onClick: () => void;
 }) {
-  const groupRef = useRef<THREE.Group>(null);
-  const haloRef = useRef<THREE.Mesh>(null);
-
-  useFrame((_, delta) => {
-    const angle = index * step + rotationRef.current;
-    const y = Math.sin(angle) * WHEEL_RADIUS;
-    const z = Math.cos(angle) * WHEEL_RADIUS;
-
-    if (groupRef.current) {
-      // Position follows the physical mounting rail...
-      groupRef.current.position.set(0, y, z);
-
-      // ...but orientation is NOT inherited from the rotating wheel.
-      // It stays parallel to the viewport at all times.
-      groupRef.current.rotation.set(0, 0, 0);
-
-    }
-
-    if (haloRef.current) {
-      const material =
-        haloRef.current.material as THREE.MeshBasicMaterial;
-      material.opacity = THREE.MathUtils.damp(
-        material.opacity,
-        active ? 0.11 : 0,
-        10,
-        delta
-      );
-    }
-  });
-
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation();
 
@@ -672,7 +849,11 @@ function ProjectCard3D({
 
   return (
     <group
-      ref={groupRef}
+      position={[
+        0,
+        Math.sin(index * step) * WHEEL_RADIUS,
+        Math.cos(index * step) * WHEEL_RADIUS,
+      ]}
       onClick={handleClick}
       onPointerOver={(event) => {
         event.stopPropagation();
@@ -682,86 +863,161 @@ function ProjectCard3D({
         document.body.style.cursor = "";
       }}
     >
-      {/* Soft selection halo behind the physical card. */}
-      <mesh ref={haloRef} position={[0, 0, -0.055]}>
-        <planeGeometry
-          args={[CARD_WIDTH + 0.22, CARD_HEIGHT + 0.22]}
-        />
-        <meshBasicMaterial
-          color="#11100e"
+      {/* This group sits on its rail's point of the circle, inside the wheel's
+          own space, so the wheel's rotation carries the card and its eyelets
+          around together with the rod.  The matching counter-rotation is applied
+          to this same group by the scene, which is what keeps the card upright
+          and front-facing at every angle. */}
+
+      {/* The card body hangs below the rod. */}
+      <group position={[0, -CARD_DROP, 0]}>
+        {/* Card stock */}
+        <RoundedBox
+          args={[CARD_WIDTH, CARD_HEIGHT, CARD_DEPTH]}
+          radius={0.11}
+          smoothness={5}
+          castShadow
+          receiveShadow
+        >
+          <meshStandardMaterial
+            color="#ffffff"
+            roughness={0.78}
+            metalness={0}
+          />
+        </RoundedBox>
+
+        {/* User-replaceable project image */}
+        <DreiImage
+          url={project.image}
+          scale={[CARD_WIDTH - 0.18, CARD_HEIGHT - 0.18]}
+          position={[0, 0, CARD_DEPTH / 2 + 0.006]}
+          radius={0.08}
           transparent
-          opacity={0}
-          depthWrite={false}
+          toneMapped={false}
         />
-      </mesh>
+      </group>
 
-      {/* Card stock */}
-      <RoundedBox
-        args={[CARD_WIDTH, CARD_HEIGHT, CARD_DEPTH]}
-        radius={0.11}
-        smoothness={5}
-        castShadow
-        receiveShadow
-      >
-        <meshStandardMaterial
-          color="#f7f4ed"
-          roughness={0.78}
-          metalness={0}
-        />
-      </RoundedBox>
-
-      {/* User-replaceable project image */}
-      <DreiImage
-        url={project.image}
-        scale={[CARD_WIDTH - 0.18, CARD_HEIGHT - 0.18]}
-        position={[0, 0, CARD_DEPTH / 2 + 0.006]}
-        radius={0.08}
-        transparent
-        toneMapped={false}
-      />
-
-      {/* Two physical mounting clips.  The real rotating rail passes
-          through this height while the card itself stays upright. */}
+      {/* Two hangers, one either side of the card.  Each rides its own length
+          of the rod that crosses the card. */}
       {[-1.98, 1.98].map((x) => (
-        <group key={x} position={[x, WHEEL_Y, 0.02]}>
-          <RoundedBox
-            args={[0.25, 0.28, 0.16]}
-            radius={0.05}
-            smoothness={3}
-            castShadow
-          >
-            <meshStandardMaterial
-              color="#777873"
-              roughness={0.32}
-              metalness={0.76}
-            />
-          </RoundedBox>
-
-          <mesh
-            position={[0, 0, 0.09]}
-            rotation={[Math.PI / 2, 0, 0]}
-          >
-            <torusGeometry args={[0.075, 0.021, 10, 24]} />
-            <meshStandardMaterial
-              color="#5e5f5b"
-              roughness={0.26}
-              metalness={0.82}
-            />
-          </mesh>
+        <group key={x} position={[x, 0, 0]}>
+          <Hanger />
         </group>
       ))}
     </group>
   );
 }
 
+/**
+ * Procedural veneer for the desk top: a warm base, long grain running the length
+ * of the desk, and seams between laid leaves.  Drawn to a canvas, so the
+ * component needs no image files.
+ */
+function makeVeneerTexture(): THREE.Texture | null {
+  const size = 512;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.fillStyle = "#96663e";
+  ctx.fillRect(0, 0, size, size);
+
+  // Long grain.
+  for (let i = 0; i < 1600; i++) {
+    const alpha = 0.03 + Math.random() * 0.05;
+    ctx.fillStyle =
+      Math.random() > 0.45
+        ? `rgba(255, 223, 183, ${alpha})`
+        : `rgba(64, 34, 16, ${alpha})`;
+    ctx.fillRect(0, Math.random() * size, size, 0.5 + Math.random() * 2.5);
+  }
+
+  // Figure in the veneer.
+  for (let i = 0; i < 26; i++) {
+    ctx.fillStyle = `rgba(84, 46, 22, ${0.05 + Math.random() * 0.06})`;
+    ctx.fillRect(0, Math.random() * size, size, 2 + Math.random() * 10);
+  }
+
+  // Seams between leaves of veneer.
+  ctx.fillStyle = "rgba(48, 25, 11, 0.5)";
+  for (const x of [0.34, 0.67]) {
+    ctx.fillRect(x * size - 1.5, 0, 3, size);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(2, 2);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/** A soft vertical wash, so the wall reads as a surface rather than a void. */
+function makeWallTexture(): THREE.Texture | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = 4;
+  canvas.height = 256;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const wash = ctx.createLinearGradient(0, 0, 0, 256);
+  wash.addColorStop(0, "#ffffff");
+  wash.addColorStop(0.6, "#f2eee7");
+  wash.addColorStop(1, "#ded6c9");
+  ctx.fillStyle = wash;
+  ctx.fillRect(0, 0, 4, 256);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+/**
+ * The room the assembly stands in: a veneer desk top at the height the stand
+ * rests on, and a wall rising behind it.  Both live inside the model's own
+ * scaled group, so the setting stays in proportion at every viewport size.
+ */
+function Room() {
+  const veneer = useMemo(() => makeVeneerTexture(), []);
+  const wallWash = useMemo(() => makeWallTexture(), []);
+
+  return (
+    <group>
+      {/* Desk top.  Its upper face is exactly the ground the feet rest on. */}
+      <mesh
+        position={[
+          0,
+          DESK_TOP - DESK_THICKNESS / 2,
+          DESK_BACK_Z + DESK_DEPTH / 2,
+        ]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[DESK_WIDTH, DESK_THICKNESS, DESK_DEPTH]} />
+        <meshStandardMaterial map={veneer} roughness={0.44} metalness={0} />
+      </mesh>
+
+      {/* Wall behind, rising from the desk's back edge. */}
+      <mesh position={[0, DESK_TOP + WALL_HEIGHT / 2, WALL_Z]} receiveShadow>
+        <planeGeometry args={[WALL_HALF_WIDTH * 2, WALL_HEIGHT]} />
+        <meshStandardMaterial map={wallWash} roughness={0.95} metalness={0} />
+      </mesh>
+    </group>
+  );
+}
+
 function DeskBase() {
   return (
-    <group position={[0, -3.4, -0.3]}>
+    <group position={[0, DESK_Y, -0.3]}>
       {/* Feet */}
       {[-WHEEL_HALF_WIDTH, WHEEL_HALF_WIDTH].map((x) => (
         <RoundedBox
           key={x}
-          args={[0.54, 0.42, 2.2]}
+          args={[0.54, DESK_FOOT_HEIGHT, 2.2]}
           radius={0.13}
           smoothness={4}
           position={[x, 0, 0]}
@@ -769,9 +1025,9 @@ function DeskBase() {
           receiveShadow
         >
           <meshStandardMaterial
-            color="#5e5d57"
-            roughness={0.44}
-            metalness={0.58}
+            color="#dfe1e5"
+            roughness={0.35}
+            metalness={0.7}
           />
         </RoundedBox>
       ))}
@@ -786,9 +1042,9 @@ function DeskBase() {
         receiveShadow
       >
         <meshStandardMaterial
-          color="#71716b"
-          roughness={0.4}
-          metalness={0.6}
+          color="#e4e6ea"
+          roughness={0.34}
+          metalness={0.7}
         />
       </RoundedBox>
 
@@ -796,17 +1052,17 @@ function DeskBase() {
       {[-WHEEL_HALF_WIDTH, WHEEL_HALF_WIDTH].map((x) => (
         <RoundedBox
           key={`upright-${x}`}
-          args={[0.27, 4.78, 0.34]}
+          args={[0.27, DESK_UPRIGHT_HEIGHT, 0.34]}
           radius={0.09}
           smoothness={4}
-          position={[x, 2.39, -0.14]}
+          position={[x, DESK_UPRIGHT_HEIGHT / 2, -0.14]}
           castShadow
           receiveShadow
         >
           <meshStandardMaterial
-            color="#6a6963"
-            roughness={0.42}
-            metalness={0.58}
+            color="#e2e4e8"
+            roughness={0.34}
+            metalness={0.72}
           />
         </RoundedBox>
       ))}
@@ -874,11 +1130,6 @@ function ProjectDetails({
         <span aria-hidden="true">↗</span>
       </a>
 
-      {passive && (
-        <p className={styles.passiveNote}>
-          Rotate the Rolodex, then click the front card to select it.
-        </p>
-      )}
     </div>
   );
 }

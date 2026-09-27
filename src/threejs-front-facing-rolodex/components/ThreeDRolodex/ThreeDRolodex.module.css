@@ -1,13 +1,12 @@
 .shell {
-  --paper: #e9e5dc;
-  --panel: #f5f1e9;
+  --paper: #ffffff;
+  --panel: #ffffff;
   --ink: #141311;
   --muted: rgba(20, 19, 17, 0.56);
   --hairline: rgba(20, 19, 17, 0.13);
 
   width: 100%;
   height: 100svh;
-  min-height: 600px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 31vw);
   overflow: hidden;
@@ -35,131 +34,6 @@
   width: 100% !important;
   height: 100% !important;
   outline: none;
-}
-
-.stageHeader {
-  position: absolute;
-  z-index: 10;
-  top: clamp(22px, 4.5vh, 52px);
-  left: clamp(22px, 4vw, 58px);
-  pointer-events: none;
-}
-
-.stageHeader p {
-  margin: 0 0 8px;
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.stageHeader h1 {
-  max-width: 8ch;
-  margin: 0;
-  font-size: clamp(28px, 4vw, 58px);
-  font-weight: 560;
-  line-height: 0.9;
-  letter-spacing: -0.06em;
-}
-
-.projectHud {
-  position: absolute;
-  z-index: 10;
-  left: clamp(22px, 4vw, 58px);
-  right: clamp(22px, 4vw, 58px);
-  bottom: clamp(25px, 4.2vh, 48px);
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
-  pointer-events: none;
-}
-
-.projectHud > div {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-}
-
-.counter {
-  color: var(--muted);
-  font-size: 10px;
-  letter-spacing: 0.13em;
-}
-
-.projectHud strong {
-  max-width: 32ch;
-  overflow: hidden;
-  font-size: clamp(15px, 1.4vw, 20px);
-  font-weight: 560;
-  letter-spacing: -0.02em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.projectHud button {
-  pointer-events: auto;
-  flex: 0 0 auto;
-  padding: 11px 0 7px;
-  border: 0;
-  border-bottom: 1px solid var(--ink);
-  color: var(--ink);
-  background: transparent;
-  font: inherit;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.scrollHint {
-  position: absolute;
-  z-index: 10;
-  top: 50%;
-  right: clamp(16px, 2.2vw, 30px);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transform: translateY(-50%) rotate(90deg)
-    translateX(50%);
-  transform-origin: right center;
-  pointer-events: none;
-}
-
-.mouseIcon {
-  position: relative;
-  width: 15px;
-  height: 23px;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-}
-
-.mouseIcon i {
-  position: absolute;
-  top: 4px;
-  left: 50%;
-  width: 2px;
-  height: 5px;
-  border-radius: 999px;
-  background: currentColor;
-  transform: translateX(-50%);
-  animation: wheelHint 1.55s ease-in-out infinite;
-}
-
-@keyframes wheelHint {
-  0%,
-  100% {
-    opacity: 0.3;
-    transform: translate(-50%, 0);
-  }
-
-  50% {
-    opacity: 1;
-    transform: translate(-50%, 5px);
-  }
 }
 
 .desktopDetails {
@@ -275,13 +149,6 @@
   letter-spacing: 0.02em;
 }
 
-.passiveNote {
-  margin: 14px 0 0;
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.45;
-}
-
 .mobileScrim,
 .mobileDrawer {
   display: none;
@@ -299,47 +166,12 @@
 
 @media (max-width: 860px) {
   .shell {
-    min-height: 540px;
     grid-template-columns: 1fr;
   }
 
   .stage {
     grid-column: 1;
     grid-row: 1;
-  }
-
-  .stageHeader {
-    top: 21px;
-    left: 20px;
-  }
-
-  .stageHeader h1 {
-    max-width: 7ch;
-    font-size: clamp(30px, 10vw, 48px);
-  }
-
-  .projectHud {
-    left: 20px;
-    right: 20px;
-    bottom: max(20px, env(safe-area-inset-bottom));
-  }
-
-  .projectHud strong {
-    max-width: 58vw;
-    font-size: 15px;
-  }
-
-  .projectHud button {
-    display: none;
-  }
-
-  .scrollHint {
-    right: 12px;
-    font-size: 8px;
-  }
-
-  .scrollHint > span:last-child {
-    display: none;
   }
 
   .desktopDetails {
@@ -430,10 +262,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mouseIcon i {
-    animation: none;
-  }
-
   .mobileScrim,
   .mobileDrawer {
     transition: none;
