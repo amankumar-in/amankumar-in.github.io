@@ -12,7 +12,6 @@ import {
   useGLTF,
 } from "@react-three/drei";
 import {
-  DepthOfField,
   EffectComposer,
   N8AO,
   Vignette,
@@ -486,20 +485,15 @@ export default function ThreeDRolodex({
               />
             </Suspense>
 
-            {/* Post, in order: ambient occlusion seats the parts against the
-                desk; the lens blur holds focus on the piece at 12.2 units and
-                lets the room fall away; the vignette closes the frame. */}
+            {/* Post: ambient occlusion seats the parts against the desk, and the
+                vignette closes the frame.  No blur passes — every surface,
+                including the front card, is drawn at full resolution. */}
             <EffectComposer multisampling={4}>
               <N8AO
                 halfRes={false}
                 aoRadius={1.6}
                 intensity={2.2}
                 distanceFalloff={1}
-              />
-              <DepthOfField
-                worldFocusDistance={12.2}
-                worldFocusRange={5}
-                bokehScale={3}
               />
               <Vignette offset={0.2} darkness={0.42} />
             </EffectComposer>
@@ -635,12 +629,8 @@ function RolodexScene({
 
       {/* The room's light: a photographed studio, used for the environment and
           reflections.  Its own backdrop is deliberately not used — see the Room
-          component for why. */}
-      <Environment
-        files={ROOM_HDRI}
-        backgroundBlurriness={0.55}
-        environmentIntensity={1}
-      />
+          component for why — and no blur is applied to what it lights. */}
+      <Environment files={ROOM_HDRI} environmentIntensity={1} />
 
       {/* Widens the shadow penumbra so the cast shadow reads as diffuse daylight
           rather than a hard-edged stencil. */}
@@ -673,7 +663,7 @@ function RolodexScene({
 
         <Planters />
 
-        <Clock />
+        <Clock fitScale={fitScale} />
 
         <Desk />
 
@@ -811,12 +801,14 @@ const Mechanism = forwardRef<
         </group>
       ))}
 
-      {/* One real mounting rail for every card. */}
+      {/* One real mounting rail for every card.
+          They cast onto the cards but deliberately do not receive: a rod is
+          0.056 units across, so it covers only about five texels of the shadow
+          map — too few to self-shadow cleanly, which shows up as speckle. */}
       {railAngles.map((angle) => (
         <mesh
           key={angle}
           castShadow
-          receiveShadow
           position={[
             0,
             Math.sin(angle) * WHEEL_RADIUS,
@@ -1013,7 +1005,8 @@ function ProjectCard3D({
  * how big a wall clock is, which is exactly the kind of anchor a plain wall
  * lacks.
  */
-function Clock() {
+function Clock({ fitScale }: { fitScale: number }) {
+  const { camera, size } = useThree();
   const hourRef = useRef<THREE.Group>(null);
   const minuteRef = useRef<THREE.Group>(null);
   const secondRef = useRef<THREE.Group>(null);
@@ -1040,8 +1033,51 @@ function Clock() {
     []
   );
 
+  // The clock is positioned in screen pixels, so the offset is converted at the
+  // clock's own depth.  An offset written in world units would drift as the model
+  // is reframed for a different viewport; this stays exactly 150 px / 200 px.
+  const offset = useMemo(() => {
+    const perspective = camera as THREE.PerspectiveCamera;
+    const halfFov = THREE.MathUtils.degToRad(perspective.fov) / 2;
+    const aspect = size.width / Math.max(1, size.height);
+    const distance = Math.abs(perspective.position.z) - (WALL_Z + 1) * fitScale;
+    const worldHalfHeight = Math.tan(halfFov) * distance;
+    const worldHalfWidth = worldHalfHeight * aspect;
+    const localPerPixel =
+      (worldHalfHeight * 2) / Math.max(1, size.height) / fitScale;
+
+    // The same breakpoint the stylesheet uses to switch to the phone layout.
+    // It has to come from the viewport, not the canvas: on a desktop window the
+    // canvas is only the left column, so it measures well under 860 px while the
+    // page is still in its desktop layout.
+    if (window.matchMedia("(max-width: 860px)").matches) {
+      const centreNdcY =
+        ((FLOOR_LEVEL + CLOCK_Y - MODEL_CENTER_Y) * fitScale) / worldHalfHeight;
+      const radiusNdcY = (CLOCK_RADIUS * fitScale) / worldHalfHeight;
+      const room = Math.max(0, 1 - radiusNdcY - centreNdcY);
+      return {
+        x: 0,
+        y: Math.min(150 * localPerPixel, (room * worldHalfHeight) / fitScale),
+      };
+    }
+
+    const centreNdcX = (CLOCK_X * fitScale) / worldHalfWidth;
+    const radiusNdcX = (CLOCK_RADIUS * fitScale) / worldHalfWidth;
+    const room = Math.max(0, 1 - radiusNdcX - centreNdcX);
+    return {
+      x: Math.min(200 * localPerPixel, (room * worldHalfWidth) / fitScale),
+      y: 0,
+    };
+  }, [camera, size.width, size.height, fitScale]);
+
   return (
-    <group position={[CLOCK_X, FLOOR_LEVEL + CLOCK_Y, WALL_Z + 1]}>
+    <group
+      position={[
+        CLOCK_X + offset.x,
+        FLOOR_LEVEL + CLOCK_Y + offset.y,
+        WALL_Z + 1,
+      ]}
+    >
       {/* Case */}
       <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
         <cylinderGeometry args={[CLOCK_RADIUS, CLOCK_RADIUS, 1.6, 40]} />
@@ -1329,13 +1365,16 @@ function Room() {
                 DOOR_GLASS,
               ]}
             />
-            <meshPhysicalMaterial
-              transmission={1}
-              thickness={2}
-              roughness={0.38}
-              ior={1.5}
-              metalness={0}
+            {/* Frosted by opacity, not by `transmission`.  A transmission
+                material makes three re-render the entire scene into a separate
+                buffer every frame, which is heavy machinery for one pane and
+                leaves the depth-based passes reading the wrong pass. */}
+            <meshStandardMaterial
               color="#eef2f4"
+              roughness={0.5}
+              metalness={0}
+              transparent
+              opacity={0.55}
             />
           </mesh>
 
