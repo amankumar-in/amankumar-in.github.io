@@ -49,14 +49,20 @@ photographed room, at real scale:
   (180 × 55 × 66 cm) from [Poly Haven](https://polyhaven.com), with
   base-colour, normal and metallic-roughness maps. **CC0**, no attribution
   required.
-- `public/hdri/art_studio_1k.hdr` — a photographed studio interior from Poly
-  Haven, **CC0**. It supplies the light and the reflections on the metal.
+- `public/hdri/art_studio_512.hdr` — a photographed studio interior from Poly
+  Haven, **CC0**, downscaled from the 1k original to 512×256. It supplies the
+  light and the reflections on the metal, and it is only ever sampled for
+  lighting and for a blurred reflection, so the extra resolution bought nothing
+  visible.
 - `public/textures/wall/` — `beige_wall_001`, a 3 m painted plaster scan. The
   office wall is a **real plane** standing 6 m behind the desk, not a background
   image: a background sits at infinity, so it has no parallax and always reads
   flat. Colour, normal and roughness maps.
 - `public/textures/floor/` — `concrete_floor_painted`, a 2 m scan, for the
   floor the desk stands on.
+
+Both texture sets are WebP re-encodes of the original JPEG scans — normal maps
+at quality 90, the rest at 85 — which halved their weight.
 - A doorway, skirting and floor give the room scale and a vanishing line; the
   door is 0.9 × 2.05 m and offset left, clear of the piece's silhouette.
 - `@react-three/postprocessing` adds ambient occlusion and a slight vignette;

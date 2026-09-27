@@ -5,5 +5,9 @@ npm install three @react-three/fiber @react-three/drei @react-three/postprocessi
 For React 19, use React Three Fiber v9 (current stable) rather than the v10 alpha.
 
 Scene assets under public/ (all CC0 from polyhaven.com):
-  hdri/art_studio_1k.hdr
+  hdri/art_studio_512.hdr
   models/woodentable01/  (WoodenTable_01_1k.gltf + .bin + textures/)
+
+The room textures and the HDRI ship downscaled and re-encoded for weight: the
+normal maps are WebP at quality 90, everything else at 85, and the HDRI is
+512x256 rather than the original 1k.

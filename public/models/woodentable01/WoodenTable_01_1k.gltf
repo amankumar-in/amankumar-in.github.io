@@ -69,17 +69,17 @@
     {
       "mimeType": "image/jpeg",
       "name": "WoodenTable_01_nor_gl",
-      "uri": "textures/WoodenTable_01_nor_gl_1k.jpg"
+      "uri": "textures/WoodenTable_01_nor_gl_1k.webp"
     },
     {
       "mimeType": "image/jpeg",
       "name": "WoodenTable_01_diff",
-      "uri": "textures/WoodenTable_01_diff_1k.jpg"
+      "uri": "textures/WoodenTable_01_diff_1k.webp"
     },
     {
       "mimeType": "image/jpeg",
       "name": "WoodenTable_01_metallic-WoodenTable_01_roughness",
-      "uri": "textures/WoodenTable_01_arm_1k.jpg"
+      "uri": "textures/WoodenTable_01_arm_1k.webp"
     }
   ],
   "accessors": [

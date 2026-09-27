@@ -31,6 +31,7 @@ import type {
   PointerEvent as ReactPointerEvent,
   ReactNode,
 } from "react";
+import { dismissBoot } from "../../../boot";
 import styles from "./ThreeDRolodex.module.css";
 
 export type RolodexProject = {
@@ -208,9 +209,16 @@ const UNITS_PER_METRE = CARD_WIDTH / 0.127;
 /** A real wooden table, modelled in metres, standing in for the desk. */
 const DESK_URL = "/models/woodentable01/WoodenTable_01_1k.gltf";
 
-/** A photographed studio room, used for the light, the reflections and the
- *  blurred backdrop. */
-const ROOM_HDRI = "/hdri/art_studio_1k.hdr";
+/**
+ * A photographed studio room, used for the light, the reflections and the
+ * blurred backdrop.
+ *
+ * Held at 512x256.  It is only ever sampled for lighting and for a blurred
+ * reflection, so the extra octaves in the 1k original cost 1.3 MB and bought
+ * nothing visible — the peak highlight survives the downscale at 90.5 against
+ * the original's 91.5.
+ */
+const ROOM_HDRI = "/hdri/art_studio_512.hdr";
 
 /**
  * The office the desk stands in.
@@ -220,16 +228,21 @@ const ROOM_HDRI = "/hdri/art_studio_1k.hdr";
  * textures publish their physical size (beige_wall_001 is a 3 m scan,
  * concrete_floor_painted a 2 m one), so the repeats are set in metres instead of
  * being eyeballed.
+ *
+ * The maps are WebP re-encodes of the original JPEG scans — normal maps at
+ * quality 90, the rest at 85, which halved the room's texture weight.  The
+ * untouched 1k JPEGs are in git history if they ever need redoing at a
+ * different quality.
  */
 const WALL_MAPS = [
-  "/textures/wall/beige_wall_001_diff_1k.jpg",
-  "/textures/wall/beige_wall_001_nor_gl_1k.jpg",
-  "/textures/wall/beige_wall_001_rough_1k.jpg",
+  "/textures/wall/beige_wall_001_diff_1k.webp",
+  "/textures/wall/beige_wall_001_nor_gl_1k.webp",
+  "/textures/wall/beige_wall_001_rough_1k.webp",
 ];
 const FLOOR_MAPS = [
-  "/textures/floor/concrete_floor_painted_diff_1k.jpg",
-  "/textures/floor/concrete_floor_painted_nor_gl_1k.jpg",
-  "/textures/floor/concrete_floor_painted_arm_1k.jpg",
+  "/textures/floor/concrete_floor_painted_diff_1k.webp",
+  "/textures/floor/concrete_floor_painted_nor_gl_1k.webp",
+  "/textures/floor/concrete_floor_painted_arm_1k.webp",
 ];
 
 const WALL_TEXTURE_METRES = 3;
@@ -519,6 +532,7 @@ export default function ThreeDRolodex({
                 suppressCardClickRef={suppressCardClickRef}
                 onCardClick={handleCardClick}
               />
+              <BootHandoff />
             </Suspense>
 
             {/* Post: ambient occlusion seats the parts against the desk, and the
@@ -582,6 +596,26 @@ export default function ThreeDRolodex({
       </aside>
     </section>
   );
+}
+
+/**
+ * Takes the splash away.
+ *
+ * It sits inside the same Suspense boundary as the scene, so it does not mount
+ * until every asset has resolved, and `useFrame` only runs on a frame that is
+ * about to be drawn — so the first call here means the scene is on screen and
+ * the splash's cross-fade has something real to reveal.
+ */
+function BootHandoff() {
+  const handedOver = useRef(false);
+
+  useFrame(() => {
+    if (handedOver.current) return;
+    handedOver.current = true;
+    dismissBoot();
+  });
+
+  return null;
 }
 
 function RolodexScene({

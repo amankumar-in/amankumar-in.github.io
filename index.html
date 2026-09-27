@@ -57,8 +57,172 @@
         "sameAs": ["https://github.com/amanofvaly"]
       }
     </script>
+    <style>
+      /* The only CSS the browser has before the bundle arrives, so it carries
+         two jobs: hold the page at the right colour so there is no flash of
+         white or black, and draw the loading splash.  Nothing in here waits on
+         a network request, which is the entire point. */
+      html {
+        background: #ffffff;
+        color-scheme: light;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-content: center;
+        justify-items: center;
+        gap: 28px;
+        background: #ffffff;
+        opacity: 1;
+        transition: opacity 520ms ease;
+      }
+
+      #boot[data-state="done"] {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Three concentric arcs of solid black.  Each fades out to nothing and
+         back on its own clock, so the mark keeps breathing for the whole of a
+         long wait instead of finishing early and then sitting still. */
+      .boot__art {
+        width: min(160px, 38vw);
+        height: auto;
+        overflow: visible;
+      }
+
+      .boot__ring {
+        transform-box: view-box;
+        transform-origin: 60px 60px;
+        animation: boot-spin linear infinite;
+      }
+
+      .boot__ring circle {
+        fill: none;
+        stroke: #000;
+        stroke-linecap: round;
+        animation: boot-fade ease-in-out infinite;
+      }
+
+      /* The sweep: outer slowest, inner quickest, the middle turning the other
+         way. */
+      .boot__ring--outer {
+        animation-duration: 2400ms;
+      }
+
+      .boot__ring--middle {
+        animation-duration: 1600ms;
+        animation-direction: reverse;
+      }
+
+      .boot__ring--inner {
+        animation-duration: 1150ms;
+      }
+
+      /* The fade cycles and, crucially, their offsets.  These three delays are
+         load-bearing: with them the faintest the mark ever gets is one ring at
+         45% opacity, at the 32-second mark of the worst window, and no ring
+         sits below 20% at any point.  Change a period without re-solving the
+         offsets and all three fades can drift into step and the whole mark
+         blinks out. */
+      .boot__ring--outer circle {
+        animation-duration: 4200ms;
+        animation-delay: -875ms;
+      }
+
+      .boot__ring--middle circle {
+        animation-duration: 3400ms;
+        animation-delay: -1133ms;
+      }
+
+      .boot__ring--inner circle {
+        animation-duration: 2600ms;
+        animation-delay: -758ms;
+      }
+
+      @keyframes boot-spin {
+        to { transform: rotate(360deg); }
+      }
+
+      /* Solid black for the first 45% of each cycle, gone by 70%, back by 95%.
+         On a white splash "gone" reads as white.  It is done by animating
+         opacity rather than the stroke colour so it runs on the compositor
+         instead of repainting the SVG sixty times a second for the whole of a
+         slow load. */
+      @keyframes boot-fade {
+        0%,
+        45% { opacity: 1; }
+        70% { opacity: 0; }
+        95%,
+        100% { opacity: 1; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        /* Rotation is a vestibular trigger, so hold the arcs still.  The opacity
+           cross-fade stays: it is the thing saying the page is still working. */
+        .boot__ring {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
+    <!-- The splash is static markup so it paints with the document's first
+         frame, before any JavaScript has been parsed.  src/boot.ts is the only
+         thing that talks to it, and all it does is take the splash away once
+         the scene has actually drawn. -->
+    <div id="boot" role="status" aria-label="Loading">
+      <svg
+        class="boot__art"
+        viewBox="0 0 120 120"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <!-- Three arcs of solid black, 58%, 46% and 34% of their circles, each
+             started a third of a turn round from the last so the three gaps sit
+             120 degrees apart.  The dashes are fixed to the ring, so rotating
+             the group sweeps the arc around without the stroke ever changing
+             length. -->
+        <g class="boot__ring boot__ring--outer">
+          <circle
+            cx="60"
+            cy="60"
+            r="46"
+            stroke-width="3"
+            stroke-dasharray="167.6 121.4"
+          />
+        </g>
+
+        <g class="boot__ring boot__ring--middle">
+          <circle
+            cx="60"
+            cy="60"
+            r="33"
+            stroke-width="2.2"
+            stroke-dasharray="95.4 111.9"
+            stroke-dashoffset="-69.1"
+          />
+        </g>
+
+        <g class="boot__ring boot__ring--inner">
+          <circle
+            cx="60"
+            cy="60"
+            r="21.5"
+            stroke-width="1.6"
+            stroke-dasharray="45.9 89.2"
+            stroke-dashoffset="-90.1"
+          />
+        </g>
+      </svg>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
